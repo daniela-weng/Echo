@@ -91,6 +91,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .accordion-body{padding:10px 14px 14px}
 .ph-yellow{color:#D97706} .ph-blue{color:#2563EB} .ph-green{color:#059669} .ph-purple{color:#7C3AED} .ph-slate{color:#475569} .ph-orange{color:#EA580C}
 
+/* ── CONSOLE SECTION (Cohort Definition + SQL) ── */
+/* Nested "sub-accordion" used inside the Console panel */
+.sub-accordion-item{border:none}
+.sub-accordion-header{display:flex;align-items:center;gap:8px;height:34px;padding:0 2px;cursor:pointer;font-weight:600;font-size:12px;color:#1E293B;border:none;background:transparent;width:100%;text-align:left;user-select:none}
+.sub-accordion-header:hover{color:#0F172A}
+.sub-acc-icon{color:#2563EB;font-size:14px;flex-shrink:0}
+.sub-accordion-chevron{margin-left:auto;font-size:18px;color:#94A3B8;transition:transform 200ms ease,color 150ms ease;flex-shrink:0}
+.sub-accordion-item.open>.sub-accordion-header .sub-accordion-chevron{transform:rotate(180deg);color:#2563EB}
+.sub-accordion-content{overflow:hidden;max-height:0;transition:max-height 250ms ease}
+.sub-accordion-item.open>.sub-accordion-content{max-height:600px}
+.sub-accordion-body{padding:6px 0 4px}
+
+/* Divider between Cohort Definition and SQL */
+.console-divider{height:1px;background:#F1F5F9;margin:10px 0 12px}
+
+/* Outlined text field (Material-style floating label) */
+.console-field{position:relative;display:block;margin-bottom:12px}
+.console-field-label{position:absolute;top:-6px;left:10px;padding:0 4px;background:#fff;font-size:10px;color:#94A3B8;letter-spacing:.3px;font-weight:500;pointer-events:none;z-index:1}
+.console-field-input,
+.console-field-textarea{width:100%;box-sizing:border-box;border:1px solid #E2E8F0;border-radius:6px;padding:9px 11px;font-size:12px;color:#1E293B;background:#FAFBFC;outline:none;font-family:inherit;transition:border-color 150ms ease,background 150ms ease}
+.console-field-input:hover,
+.console-field-textarea:hover{border-color:#CBD5E1}
+.console-field-input:focus,
+.console-field-textarea:focus{border-color:#2563EB;background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,0.08)}
+.console-field-textarea{min-height:70px;resize:vertical;line-height:1.45}
+
+/* SQL generating status row (above code editor) — matches .agent-status-bar pattern */
+.sql-status{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748B;margin-bottom:8px}
+.sql-status .status-dot.gray{background:#CBD5E1}
+
+/* SQL code editor (read-only display w/ line numbers & syntax highlighting) */
+.sql-editor{border:1px solid #E2E8F0;border-radius:6px;background:#FAFBFC;max-height:190px;overflow:auto}
+.sql-code{margin:0;padding:8px 10px 8px 0;list-style:none;counter-reset:sqlln;font-family:'SF Mono','Menlo','Monaco','Consolas','Courier New',monospace;font-size:11px;line-height:1.55;color:#1E293B}
+.sql-code li{counter-increment:sqlln;position:relative;padding:0 10px 0 42px;white-space:pre}
+.sql-code li::before{content:counter(sqlln);position:absolute;left:0;top:0;width:32px;padding-right:8px;text-align:right;color:#94A3B8;font-size:10.5px;border-right:1px solid #E2E8F0;box-sizing:border-box;user-select:none}
+.sql-kw{color:#2563EB;font-weight:600}
+.sql-num{color:#7C3AED;font-weight:500}
+.sql-str{color:#059669}
+.sql-comment{color:#94A3B8;font-style:italic}
+
+/* SQL action buttons (Save / Execute SQL) — uses global .btn pattern */
+.sql-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+
 /* Agent pipeline */
 .agent-pipeline{display:flex;align-items:center;gap:4px;margin-bottom:10px}
 .agent-node{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}

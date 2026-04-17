@@ -12,11 +12,57 @@ const props = defineProps({
 })
 const emit = defineEmits([
   'addGroup', 'deleteGroup', 'addMetric', 'deleteMetric', 'chatSend',
+  'sqlGenerate', 'sqlSave', 'sqlExecute',
 ])
 
 // Accordion open state
-const open = ref({ cohort: true, compare: false, detail: false, insights: false, chat: true })
+const open = ref({ console: true, cohortDef: true, compare: false, detail: false, insights: false, chat: true })
 function toggle(key) { open.value[key] = !open.value[key] }
+
+// Console — Cohort Definition form state
+const cohortShortName = ref('ICU patients with major depressive disorder (MDD)')
+const cohortDefinition = ref('ICU patients with major depressive disorder (MDD)')
+
+// Console — SQL text (kept as a plain string for simple editing / syntax rendering)
+const sqlText = ref(
+`SELECT DISTINCT
+  p.person_id
+FROM
+  omop.person p
+WHERE
+  p.person_id IN (
+    SELECT
+      person_id
+    FROM
+      omop.visit_occurrence
+    WHERE
+      visit_concept_id = 32037
+      -- Intensive Care (OMOP)
+  );`
+)
+
+// SQL generation status (shown above the code editor)
+// tone: 'green' (ready) | 'blue' (running/pulsing) | 'gray' (idle)
+const sqlStatus = ref({ tone: 'green', text: 'Generated · SELECT validated against omop.person' })
+
+// Lightweight tokenizer for SQL display (keywords / numbers / comments / strings)
+const SQL_KEYWORDS = /\b(SELECT|DISTINCT|FROM|WHERE|IN|AND|OR|NOT|AS|JOIN|LEFT|RIGHT|INNER|OUTER|ON|GROUP|BY|ORDER|LIMIT|HAVING|UNION|INSERT|UPDATE|DELETE|VALUES|INTO|CASE|WHEN|THEN|ELSE|END|IS|NULL|EXISTS|BETWEEN|LIKE)\b/g
+function highlightSql(line) {
+  // escape first
+  let s = line
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  // comments take priority (rest of line)
+  s = s.replace(/(--.*)$/g, '<span class="sql-comment">$1</span>')
+  // strings
+  s = s.replace(/'([^']*)'/g, `<span class="sql-str">'$1'</span>`)
+  // numbers
+  s = s.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="sql-num">$1</span>')
+  // keywords
+  s = s.replace(SQL_KEYWORDS, '<span class="sql-kw">$1</span>')
+  return s || '&nbsp;'
+}
 
 // Chat
 const chatInput = ref('')
@@ -40,29 +86,95 @@ const metricEditorOpen = ref(false)
     <!-- Scrollable accordion stack -->
     <div class="right-panels-scroll">
 
-    <!-- Section 1: Cohort Analysis -->
-    <div class="accordion-item" :class="{ open: open.cohort }">
-      <button class="accordion-header" @click="toggle('cohort')">
-        <span class="material-symbols-outlined acc-icon">account_tree</span>
-        Cohort Analysis
+    <!-- Section 0: Console (Cohort Definition + SQL) -->
+    <div class="accordion-item" :class="{ open: open.console }">
+      <button class="accordion-header" @click="toggle('console')">
+        <span class="material-symbols-outlined acc-icon">terminal</span>
+        Console
         <span class="material-symbols-outlined accordion-chevron">chevron_right</span>
       </button>
       <div class="accordion-content">
         <div class="accordion-body">
-          <div class="agent-pipeline">
-            <template v-for="(step, i) in pipelineSteps" :key="step.id">
-              <div class="agent-node">
-                <div class="agent-circle" :class="step.status">{{ step.label[0] }}</div>
-                <div class="agent-label">{{ step.label }}</div>
+
+          <!-- Sub-section: Cohort Definition -->
+          <div class="sub-accordion-item" :class="{ open: open.cohortDef }">
+            <button class="sub-accordion-header" @click="toggle('cohortDef')">
+              <span class="material-symbols-outlined sub-acc-icon">edit</span>
+              Cohort Definition
+              <span class="material-symbols-outlined sub-accordion-chevron">expand_more</span>
+            </button>
+            <div class="sub-accordion-content">
+              <div class="sub-accordion-body">
+                <label class="console-field">
+                  <span class="console-field-label">Short Name:</span>
+                  <input
+                    class="console-field-input"
+                    type="text"
+                    v-model="cohortShortName"
+                    placeholder="Enter a short name…"
+                  />
+                </label>
+                <label class="console-field">
+                  <span class="console-field-label">Definition:</span>
+                  <textarea
+                    class="console-field-textarea"
+                    v-model="cohortDefinition"
+                    rows="3"
+                    placeholder="Describe the cohort…"
+                  ></textarea>
+                </label>
               </div>
-              <div v-if="i < pipelineSteps.length - 1" class="agent-arrow">→</div>
-            </template>
+            </div>
           </div>
-          <div class="agent-status-bar">
-            <div class="status-dot blue"></div>
-            {{ statusText }}
+
+          <div class="console-divider"></div>
+
+          <!-- Sub-section: SQL -->
+          <div class="sub-accordion-item open">
+            <div class="sub-accordion-header" style="cursor:default">
+              <span class="material-symbols-outlined sub-acc-icon">code</span>
+              SQL
+              <button class="btn" @click.stop="$emit('sqlGenerate')" style="margin-left:auto" title="Generate SQL">
+                <span class="material-symbols-outlined" style="font-size:12px">bolt</span>
+                Generate
+              </button>
+            </div>
+            <div class="sub-accordion-content">
+              <div class="sub-accordion-body">
+
+                <!-- Generating status -->
+                <div class="sql-status">
+                  <div class="status-dot" :class="sqlStatus.tone"></div>
+                  <span>{{ sqlStatus.text }}</span>
+                </div>
+
+                <!-- Code editor -->
+                <div class="sql-editor">
+                  <ol class="sql-code">
+                    <li
+                      v-for="(line, i) in sqlText.split('\n')"
+                      :key="i"
+                      v-html="highlightSql(line)"
+                    ></li>
+                  </ol>
+                </div>
+
+                <!-- Actions -->
+                <div class="sql-actions">
+                  <button class="btn" @click="$emit('sqlSave')">
+                    <span class="material-symbols-outlined" style="font-size:12px">save</span>
+                    Save
+                  </button>
+                  <button class="btn primary" @click="$emit('sqlExecute')">
+                    <span class="material-symbols-outlined" style="font-size:12px">play_arrow</span>
+                    Execute SQL
+                  </button>
+                </div>
+
+              </div>
+            </div>
           </div>
-          <div class="agent-log">{{ logLines.join('\n') }}</div>
+
         </div>
       </div>
     </div>
@@ -106,72 +218,6 @@ const metricEditorOpen = ref(false)
             </svg>
           </div>
 
-          <!-- Sankey Branch A -->
-          <div class="cp-sec-lbl">Criteria Flow</div>
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-            <div style="width:9px;height:9px;border-radius:50%;background:#2563EB;flex-shrink:0"></div>
-            <span style="font-size:11px;color:#475569;font-weight:500">Branch A</span>
-          </div>
-          <svg viewBox="0 0 210 145" width="100%" style="display:block;overflow:visible" font-family="inherit">
-            <defs>
-              <linearGradient id="sk-a-blue" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%"   stop-color="#93C5FD" stop-opacity="0.55"/>
-                <stop offset="100%" stop-color="#BFDBFE" stop-opacity="0.4"/>
-              </linearGradient>
-            </defs>
-            <path d="M 13,28 C 56,28 56,28 99,28 L 99,51 C 56,51 56,51 13,51 Z" fill="url(#sk-a-blue)"/>
-            <path d="M 13,51 C 56,51 56,59 99,59 L 99,126 C 56,126 56,118 13,118 Z" fill="#E2E8F0" opacity="0.8"/>
-            <path d="M 107,28 C 150,28 150,28 193,28 L 193,37 C 150,37 150,37 107,37 Z" fill="url(#sk-a-blue)"/>
-            <path d="M 107,37 C 150,37 150,43 193,43 L 193,57 C 150,57 150,51 107,51 Z" fill="#E2E8F0" opacity="0.8"/>
-            <rect x="5"   y="28" width="8" height="90" fill="#2563EB" rx="1.5"/>
-            <rect x="99"  y="28" width="8" height="23" fill="#2563EB" rx="1.5"/>
-            <rect x="99"  y="59" width="8" height="67" fill="#CBD5E1" rx="1.5"/>
-            <rect x="193" y="28" width="8" height="9"  fill="#2563EB" rx="1.5"/>
-            <rect x="193" y="43" width="8" height="14" fill="#CBD5E1" rx="1.5"/>
-            <text x="9"   text-anchor="middle" y="20"  font-size="11" fill="#6B7280">Base</text>
-            <text x="103" text-anchor="middle" y="15"  font-size="10" fill="#6B7280">Age ≥50</text>
-            <text x="103" text-anchor="middle" y="27"  font-size="10" fill="#6B7280">&amp; HTN</text>
-            <text x="197" text-anchor="middle" y="20"  font-size="11" fill="#6B7280">Final</text>
-            <text x="9"   text-anchor="middle" y="133" font-size="10" fill="#6B7280">12,345</text>
-            <text x="111" y="43"  font-size="10" font-weight="700" fill="#2563EB" stroke="#fff" stroke-width="2.5" paint-order="stroke fill">3,100</text>
-            <text x="56"  text-anchor="middle" y="93"  font-size="10" fill="#94A3B8">9,245 excl.</text>
-            <text x="207" text-anchor="end"    y="36"  font-size="11" font-weight="700" fill="#2563EB" stroke="#fff" stroke-width="2.5" paint-order="stroke fill">1,240</text>
-            <text x="207" text-anchor="end"    y="52"  font-size="10" font-weight="600" fill="#64748B">Excl. ICU Stay</text>
-            <text x="207" text-anchor="end"    y="63"  font-size="9.5" fill="#94A3B8">1,860</text>
-          </svg>
-
-          <!-- Sankey Branch B -->
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;margin-top:10px">
-            <div style="width:9px;height:9px;border-radius:50%;background:#7C3AED;flex-shrink:0"></div>
-            <span style="font-size:11px;color:#475569;font-weight:500">Branch B</span>
-          </div>
-          <svg viewBox="0 0 210 145" width="100%" style="display:block;overflow:visible" font-family="inherit">
-            <defs>
-              <linearGradient id="sk-b-purple" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%"   stop-color="#A78BFA" stop-opacity="0.55"/>
-                <stop offset="100%" stop-color="#DDD6FE" stop-opacity="0.4"/>
-              </linearGradient>
-            </defs>
-            <path d="M 13,28 C 56,28 56,28 99,28 L 99,59 C 56,59 56,59 13,59 Z" fill="url(#sk-b-purple)"/>
-            <path d="M 13,59 C 56,59 56,67 99,67 L 99,126 C 56,126 56,118 13,118 Z" fill="#E2E8F0" opacity="0.8"/>
-            <path d="M 107,28 C 150,28 150,28 193,28 L 193,48 C 150,48 150,48 107,48 Z" fill="url(#sk-b-purple)"/>
-            <path d="M 107,48 C 150,48 150,54 193,54 L 193,65 C 150,65 150,59 107,59 Z" fill="#E2E8F0" opacity="0.8"/>
-            <rect x="5"   y="28" width="8" height="90" fill="#7C3AED" rx="1.5"/>
-            <rect x="99"  y="28" width="8" height="31" fill="#7C3AED" rx="1.5"/>
-            <rect x="99"  y="67" width="8" height="59" fill="#CBD5E1" rx="1.5"/>
-            <rect x="193" y="28" width="8" height="20" fill="#7C3AED" rx="1.5"/>
-            <rect x="193" y="54" width="8" height="11" fill="#CBD5E1" rx="1.5"/>
-            <text x="9"   text-anchor="middle" y="20"  font-size="11" fill="#6B7280">Base</text>
-            <text x="103" text-anchor="middle" y="15"  font-size="10" fill="#6B7280">Age ≥45</text>
-            <text x="103" text-anchor="middle" y="27"  font-size="10" fill="#6B7280">&amp; SBP&gt;140</text>
-            <text x="197" text-anchor="middle" y="20"  font-size="11" fill="#6B7280">Final</text>
-            <text x="9"   text-anchor="middle" y="133" font-size="10" fill="#6B7280">12,345</text>
-            <text x="111" y="47"  font-size="10" font-weight="700" fill="#7C3AED" stroke="#fff" stroke-width="2.5" paint-order="stroke fill">4,200</text>
-            <text x="56"  text-anchor="middle" y="97"  font-size="10" fill="#94A3B8">8,145 excl.</text>
-            <text x="207" text-anchor="end"    y="41"  font-size="11" font-weight="700" fill="#7C3AED" stroke="#fff" stroke-width="2.5" paint-order="stroke fill">2,800</text>
-            <text x="207" text-anchor="end"    y="61"  font-size="10" font-weight="600" fill="#64748B">Insuf. Obs. Window</text>
-            <text x="207" text-anchor="end"    y="72"  font-size="9.5" fill="#94A3B8">1,400</text>
-          </svg>
         </div>
       </div>
     </div>
