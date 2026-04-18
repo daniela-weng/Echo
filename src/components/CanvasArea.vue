@@ -21,7 +21,7 @@ const nodeTypes = {
 }
 
 const sqlOpen         = ref(false)
-const sqlActiveBranch = ref('A')
+const sqlActiveCohort = ref('A')
 const toolbarDropdown = ref(false)
 const mobilePanelsOpen = ref(false)
 
@@ -50,7 +50,7 @@ emit('expose', { toggleMobilePanels: () => { mobilePanelsOpen.value = !mobilePan
         <button class="btn"><span class="material-symbols-outlined">add</span>AND</button>
         <button class="btn"><span class="material-symbols-outlined">arrow_or_edge</span>OR</button>
         <button class="btn"><span class="material-symbols-outlined">filter_alt</span>At Least</button>
-        <button class="btn"><span class="material-symbols-outlined">content_copy</span>Dup.Branch</button>
+        <button class="btn"><span class="material-symbols-outlined">content_copy</span>Dup.Cohort</button>
       </div>
 
       <!-- Overflow dropdown (small screens) -->
@@ -64,7 +64,7 @@ emit('expose', { toggleMobilePanels: () => { mobilePanelsOpen.value = !mobilePan
           <button class="btn"><span class="material-symbols-outlined">add</span>AND</button>
           <button class="btn"><span class="material-symbols-outlined">arrow_or_edge</span>OR</button>
           <button class="btn"><span class="material-symbols-outlined">filter_alt</span>At Least</button>
-          <button class="btn"><span class="material-symbols-outlined">content_copy</span>Dup.Branch</button>
+          <button class="btn"><span class="material-symbols-outlined">content_copy</span>Dup.Cohort</button>
         </div>
       </div>
 
@@ -98,11 +98,11 @@ emit('expose', { toggleMobilePanels: () => { mobilePanelsOpen.value = !mobilePan
               <div style="font-weight:700;font-size:11px;color:#64748B;letter-spacing:0.3px;margin-bottom:7px">LEGEND</div>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">
                 <div style="width:22px;border-top:2px dashed #93C5FD;flex-shrink:0"></div>
-                <span style="font-size:11.5px;font-weight:600;color:#1D4ED8">Branch A</span>
+                <span style="font-size:11.5px;font-weight:600;color:#1D4ED8">Cohort A</span>
               </div>
               <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
                 <div style="width:22px;border-top:2px dashed #A78BFA;flex-shrink:0"></div>
-                <span style="font-size:11.5px;font-weight:600;color:#7C3AED">Branch B</span>
+                <span style="font-size:11.5px;font-weight:600;color:#7C3AED">Cohort B</span>
               </div>
               <div style="border-top:1px solid #F1F5F9;padding-top:6px;display:flex;flex-direction:column;gap:5px">
                 <div style="display:flex;gap:8px;align-items:center">
@@ -133,14 +133,14 @@ emit('expose', { toggleMobilePanels: () => { mobilePanelsOpen.value = !mobilePan
           <div class="sql-tabs">
             <button
               class="sql-tab"
-              :class="{ active: sqlActiveBranch === 'A' }"
-              @click="sqlActiveBranch = 'A'"
-            >Branch A</button>
+              :class="{ active: sqlActiveCohort === 'A' }"
+              @click="sqlActiveCohort = 'A'"
+            >Cohort A</button>
             <button
               class="sql-tab"
-              :class="{ active: sqlActiveBranch === 'B' }"
-              @click="sqlActiveBranch = 'B'"
-            >Branch B</button>
+              :class="{ active: sqlActiveCohort === 'B' }"
+              @click="sqlActiveCohort = 'B'"
+            >Cohort B</button>
             <button class="sql-tab">Logs</button>
           </div>
           <button class="sql-close" @click="toggleSQL">
@@ -150,8 +150,8 @@ emit('expose', { toggleMobilePanels: () => { mobilePanelsOpen.value = !mobilePan
           </button>
         </div>
         <div class="sql-body">
-          <!-- TODO: replace with dynamic SQL from fetchSQL(sqlActiveBranch) -->
-          <pre class="sql-code"><span class="sql-cmt">-- Branch {{ sqlActiveBranch }}: Hypertension Cohort</span>
+          <!-- TODO: replace with dynamic SQL from fetchSQL(sqlActiveCohort) -->
+          <pre class="sql-code"><span class="sql-cmt">-- Cohort {{ sqlActiveCohort }}: Hypertension Cohort</span>
 <span class="sql-kw">SELECT</span> p.person_id, p.gender_concept_id, p.year_of_birth
 <span class="sql-kw">FROM</span>   omop.person p
 <span class="sql-kw">JOIN</span>   omop.condition_occurrence co

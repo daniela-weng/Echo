@@ -218,19 +218,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cp-chat-inp{display:flex;border-top:1px solid #E2E8F0;background:#fff;flex-shrink:0}
 .cp-chat-inp input{flex:1;border:none;padding:7px 9px;font-size:11px;outline:none;color:#1E293B;background:transparent}
 .cp-chat-inp button{padding:7px 9px;border:none;background:none;cursor:pointer;color:#2563EB}
-.cp-branches{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding-bottom:10px}
-.cp-branch{border-radius:7px;padding:8px;border:1.5px solid}
-.cp-branch.a{background:#F8FAFC;border-color:#BFDBFE}
-.cp-branch.b{background:#F5F3FF;border-color:#8E7BE8;box-shadow:0 2px 5px rgba(124,58,237,0.12)}
-.cp-branch-tag{font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:4px}
-.cp-branch.a .cp-branch-tag{color:#2563EB}
-.cp-branch.b .cp-branch-tag{color:#7C3AED}
-.cp-branch-n{font-size:15px;font-weight:700;line-height:1.2}
-.cp-branch.a .cp-branch-n{color:#1D4ED8}
-.cp-branch.b .cp-branch-n{color:#6D28D9}
-.cp-branch-sub{font-size:12px;color:#64748B;margin-top:3px;margin-bottom:2px}
-.cp-branch-criteria{font-size:11px;margin-top:4px;line-height:1.4;color:#374151;list-style:disc;padding-left:13px}
-.cp-branch-criteria li{margin-bottom:0}
+.cp-cohorts{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding-bottom:10px}
+.cp-cohort{border-radius:7px;padding:8px;border:1.5px solid}
+.cp-cohort.a{background:#F8FAFC;border-color:#BFDBFE}
+.cp-cohort.b{background:#F5F3FF;border-color:#8E7BE8;box-shadow:0 2px 5px rgba(124,58,237,0.12)}
+.cp-cohort-tag{font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:4px}
+.cp-cohort.a .cp-cohort-tag{color:#2563EB}
+.cp-cohort.b .cp-cohort-tag{color:#7C3AED}
+.cp-cohort-n{font-size:15px;font-weight:700;line-height:1.2}
+.cp-cohort.a .cp-cohort-n{color:#1D4ED8}
+.cp-cohort.b .cp-cohort-n{color:#6D28D9}
+.cp-cohort-sub{font-size:12px;color:#64748B;margin-top:3px;margin-bottom:2px}
+.cp-cohort-criteria{font-size:11px;margin-top:4px;line-height:1.4;color:#374151;list-style:disc;padding-left:13px}
+.cp-cohort-criteria li{margin-bottom:0}
 .cp-sec{font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .cp-metric-grid{display:grid;grid-template-columns:auto 1fr 1fr;gap:3px 6px;align-items:center;margin-bottom:4px}
 .cp-mg-label{font-size:12px;color:#64748B}

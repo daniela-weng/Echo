@@ -3,17 +3,17 @@ import { ref } from 'vue'
 export function useGraph() {
   const nodes = ref([
     { id: 'db',      type: 'database',  position: { x: 130, y: 10  }, data: { name: 'mimic_iv', count: '12,345' } },
-    { id: 'age50',   type: 'criterion', position: { x: 10,  y: 160 }, data: { branch: 'a', type: 'inclusion', label: 'Age ≥ 50',   concept: 'person.YOB',       domain: 'Person',             n: '8,200',  change: '↓ 34%',            changeColor: '#DC2626' } },
-    { id: 'htnA',    type: 'criterion', position: { x: 205, y: 160 }, data: { branch: 'a', type: 'inclusion', label: 'Hypertension', concept: 'SNOMED: 38341003', domain: 'Condition',          n: '9,100',  change: 'in population',    changeColor: '#94A3B8', warning: 'Largest drop' } },
-    { id: 'andA',    type: 'operator',  position: { x: 140, y: 340 }, data: { branch: 'a', op: 'AND', n: '3,100' } },
-    { id: 'exclIcu', type: 'criterion', position: { x: 65,  y: 420 }, data: { branch: 'a', type: 'exclusion', label: 'Excl. ICU Stay', concept: 'OMOP: 4149943', domain: 'Visit Detail',        n: '1,240',  change: '↓ 60%',            changeColor: '#DC2626' } },
-    { id: 'cohortA', type: 'terminal',  position: { x: 75,  y: 580 }, data: { branch: 'a', label: 'Cohort A: 1,240' } },
-    { id: 'age45',   type: 'criterion', position: { x: 490, y: 130 }, data: { branch: 'b', type: 'inclusion', badge: 'modified', label: 'Age ≥ 45', concept: 'person.YOB', domain: 'Person',   n: '9,800',  change: '+1,600 vs Branch A', changeColor: '#059669' } },
-    { id: 'htnB',    type: 'criterion', position: { x: 375, y: 330 }, data: { branch: 'b', type: 'inclusion', label: 'Hypertension', concept: 'SNOMED: 38341003', domain: 'Condition',          n: '9,100',  change: 'in population',    changeColor: '#94A3B8' } },
-    { id: 'sbp140',  type: 'criterion', position: { x: 575, y: 330 }, data: { branch: 'b', type: 'inclusion', badge: 'new',      label: 'SBP > 140',  concept: 'SNOMED: 38341003', domain: 'Condition', n: '5,200', change: 'in population', changeColor: '#94A3B8' } },
-    { id: 'andB',    type: 'operator',  position: { x: 475, y: 510 }, data: { branch: 'b', op: 'AND', n: '4,200' } },
-    { id: 'exclB',   type: 'criterion', position: { x: 450, y: 595 }, data: { branch: 'b', type: 'exclusion', label: 'Insufficient Observation Window', concept: 'OMOP: 4214956', domain: 'Observation Period', n: '2,800', change: '↓ 1,400', changeColor: '#DC2626' } },
-    { id: 'cohortB', type: 'terminal',  position: { x: 430, y: 755 }, data: { branch: 'b', label: 'Cohort B: 2,800' } },
+    { id: 'age50',   type: 'criterion', position: { x: 10,  y: 160 }, data: { cohort: 'a', type: 'inclusion', label: 'Age ≥ 50',   concept: 'person.YOB',       domain: 'Person',             n: '8,200',  change: '↓ 34%',            changeColor: '#DC2626' } },
+    { id: 'htnA',    type: 'criterion', position: { x: 205, y: 160 }, data: { cohort: 'a', type: 'inclusion', label: 'Hypertension', concept: 'SNOMED: 38341003', domain: 'Condition',          n: '9,100',  change: 'in population',    changeColor: '#94A3B8', warning: 'Largest drop' } },
+    { id: 'andA',    type: 'operator',  position: { x: 140, y: 340 }, data: { cohort: 'a', op: 'AND', n: '3,100' } },
+    { id: 'exclIcu', type: 'criterion', position: { x: 65,  y: 420 }, data: { cohort: 'a', type: 'exclusion', label: 'Excl. ICU Stay', concept: 'OMOP: 4149943', domain: 'Visit Detail',        n: '1,240',  change: '↓ 60%',            changeColor: '#DC2626' } },
+    { id: 'cohortA', type: 'terminal',  position: { x: 75,  y: 580 }, data: { cohort: 'a', label: 'Cohort A: 1,240' } },
+    { id: 'age45',   type: 'criterion', position: { x: 490, y: 130 }, data: { cohort: 'b', type: 'inclusion', badge: 'modified', label: 'Age ≥ 45', concept: 'person.YOB', domain: 'Person',   n: '9,800',  change: '+1,600 vs Cohort A', changeColor: '#059669' } },
+    { id: 'htnB',    type: 'criterion', position: { x: 375, y: 330 }, data: { cohort: 'b', type: 'inclusion', label: 'Hypertension', concept: 'SNOMED: 38341003', domain: 'Condition',          n: '9,100',  change: 'in population',    changeColor: '#94A3B8' } },
+    { id: 'sbp140',  type: 'criterion', position: { x: 575, y: 330 }, data: { cohort: 'b', type: 'inclusion', badge: 'new',      label: 'SBP > 140',  concept: 'SNOMED: 38341003', domain: 'Condition', n: '5,200', change: 'in population', changeColor: '#94A3B8' } },
+    { id: 'andB',    type: 'operator',  position: { x: 475, y: 510 }, data: { cohort: 'b', op: 'AND', n: '4,200' } },
+    { id: 'exclB',   type: 'criterion', position: { x: 450, y: 595 }, data: { cohort: 'b', type: 'exclusion', label: 'Insufficient Observation Window', concept: 'OMOP: 4214956', domain: 'Observation Period', n: '2,800', change: '↓ 1,400', changeColor: '#DC2626' } },
+    { id: 'cohortB', type: 'terminal',  position: { x: 430, y: 755 }, data: { cohort: 'b', label: 'Cohort B: 2,800' } },
   ])
 
   const edges = ref([

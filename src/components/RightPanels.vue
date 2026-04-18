@@ -1,6 +1,24 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import MetricEditorModal from './MetricEditorModal.vue'
+import UpSetPlot from './UpSetPlot.vue'
+
+// --- Cohort Overlap demo data ---
+// In production these would come from executeGraph results.
+// With A=1,240 and B=2,800 sharing 900 patients (see Insights):
+//   A only     = 1,240 - 900 = 340
+//   A ∩ B      = 900
+//   B only     = 2,800 - 900 = 1,900
+const overlapCohorts = [
+  { name: 'Cohort A', size: 1240, color: '#2563EB' },   // blue
+  { name: 'Cohort B', size: 2800, color: '#7C3AED' },   // purple
+]
+// Intersections pre-sorted by size descending. `sets` holds indices into overlapCohorts.
+const overlapIntersections = [
+  { sets: [1],    size: 1900 },   // B only
+  { sets: [0, 1], size:  900 },   // A ∩ B
+  { sets: [0],    size:  340 },   // A only
+]
 
 const props = defineProps({
   pipelineSteps: Array,
@@ -188,36 +206,14 @@ const metricEditorOpen = ref(false)
       </button>
       <div class="accordion-content">
         <div class="accordion-body">
-          <!-- Branch counts -->
-          <div class="cmp-row">
-            <div style="display:flex;align-items:center">
-              <div class="cmp-dot" style="background:#2563EB;border-radius:4.5px"></div>
-              <span class="cmp-label">Branch A (Baseline)</span>
-            </div>
-            <span class="cmp-val" style="color:#2563EB">1,240</span>
-          </div>
-          <div class="cmp-row">
-            <div style="display:flex;align-items:center">
-              <div class="cmp-dot" style="background:#7C3AED;border-radius:4.5px"></div>
-              <span class="cmp-label">Branch B (Alternative)</span>
-            </div>
-            <span class="cmp-val" style="color:#7C3AED">2,800</span>
-          </div>
-
-          <!-- Venn diagram -->
-          <div style="margin-top:8px">
-            <svg viewBox="0 0 232 105" width="100%" style="display:block;overflow:visible">
-              <circle cx="84"  cy="52" r="44" fill="#3B82F6" fill-opacity="0.85"/>
-              <circle cx="148" cy="52" r="44" fill="#7C3AED" fill-opacity="0.85"/>
-              <text x="60"  y="46" text-anchor="middle" font-family="inherit" font-size="10" fill="rgba(255,255,255,0.88)">A only</text>
-              <text x="65"  y="59" text-anchor="middle" font-family="inherit" font-size="10" font-weight="700" fill="#fff">N = 340</text>
-              <text x="116" y="45" text-anchor="middle" font-family="inherit" font-size="10" fill="rgba(255,255,255,0.88)">Shared</text>
-              <text x="116" y="59" text-anchor="middle" font-family="inherit" font-size="10" font-weight="700" fill="#fff">N = 900</text>
-              <text x="172" y="45" text-anchor="middle" font-family="inherit" font-size="10" fill="rgba(255,255,255,0.88)">B only</text>
-              <text x="166" y="59" text-anchor="middle" font-family="inherit" font-size="10" font-weight="700" fill="#fff">N = 1,900</text>
-            </svg>
-          </div>
-
+          <!-- UpSet plot: exclusive and shared patient subsets across selected cohorts.
+               Set-size bars and counts inside the plot replace the previous summary rows. -->
+          <UpSetPlot
+            :cohorts="overlapCohorts"
+            :intersections="overlapIntersections"
+            :width="244"
+            :height="134"
+          />
         </div>
       </div>
     </div>
@@ -231,23 +227,23 @@ const metricEditorOpen = ref(false)
       </button>
       <div class="accordion-content">
         <div class="accordion-body">
-          <!-- Branch summary cards -->
-          <div class="cp-branches">
-            <div class="cp-branch a">
-              <div class="cp-branch-tag">Branch A · Baseline</div>
-              <div class="cp-branch-n">1,240</div>
-              <div class="cp-branch-sub">3 criteria</div>
-              <ul class="cp-branch-criteria">
+          <!-- Cohort summary cards -->
+          <div class="cp-cohorts">
+            <div class="cp-cohort a">
+              <div class="cp-cohort-tag">Cohort A · Baseline</div>
+              <div class="cp-cohort-n">1,240</div>
+              <div class="cp-cohort-sub">3 criteria</div>
+              <ul class="cp-cohort-criteria">
                 <li>Age ≥ 50</li>
                 <li>Hypertension</li>
                 <li>NOT ICU Stay</li>
               </ul>
             </div>
-            <div class="cp-branch b">
-              <div class="cp-branch-tag">Branch B · Alternative</div>
-              <div class="cp-branch-n">2,800</div>
-              <div class="cp-branch-sub">4 criteria</div>
-              <ul class="cp-branch-criteria">
+            <div class="cp-cohort b">
+              <div class="cp-cohort-tag">Cohort B · Alternative</div>
+              <div class="cp-cohort-n">2,800</div>
+              <div class="cp-cohort-sub">4 criteria</div>
+              <ul class="cp-cohort-criteria">
                 <li>Age ≥ 45 <span style="background:#EDE9FE;color:#6D28D9;font-size:11px;font-weight:700;padding:1px 4px;border-radius:3px">[NEW]</span></li>
                 <li>Hypertension</li>
                 <li>SBP &gt; 140 <span style="background:#EDE9FE;color:#6D28D9;font-size:11px;font-weight:700;padding:1px 4px;border-radius:3px">[NEW]</span></li>
@@ -315,11 +311,11 @@ const metricEditorOpen = ref(false)
         <div class="accordion-body">
           <div class="insight-item">
             <div class="insight-icon ii-ok" style="font-weight:700">✓</div>
-            <div class="insight-text"><em>Branch B</em> yields <em>2.3× more patients</em>, sufficient power for age 45–50 subgroup analysis</div>
+            <div class="insight-text"><em>Cohort B</em> yields <em>2.3× more patients</em>, sufficient power for age 45–50 subgroup analysis</div>
           </div>
           <div class="insight-item">
             <div class="insight-icon ii-ok" style="font-weight:700">✓</div>
-            <div class="insight-text"><em>900 shared patients</em> (~73% of A) support paired sensitivity analysis across branches</div>
+            <div class="insight-text"><em>900 shared patients</em> (~73% of A) support paired sensitivity analysis across cohorts</div>
           </div>
           <div class="insight-item">
             <div class="insight-icon ii-warn">⚠</div>
@@ -331,7 +327,7 @@ const metricEditorOpen = ref(false)
           </div>
           <div class="insight-item">
             <div class="insight-icon ii-tip" style="font-size:12px">➜</div>
-            <div class="insight-text"><em>Branch B</em> criteria align more closely with real-world HTN prevalence (45+), strengthening external validity</div>
+            <div class="insight-text"><em>Cohort B</em> criteria align more closely with real-world HTN prevalence (45+), strengthening external validity</div>
           </div>
         </div>
       </div>

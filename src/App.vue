@@ -62,5 +62,5 @@ async function onExecute() {
     </div>
   </div>
 
-  <BottomBar :active-branches="2" points-used="3,125 / 9 pts" />
+  <BottomBar :active-cohorts="2" points-used="3,125 / 9 pts" />
 </template>

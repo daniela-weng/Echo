@@ -1,6 +1,6 @@
 <script setup>
 defineProps({
-  activeBranches: { type: Number, default: 2 },
+  activeCohorts: { type: Number, default: 2 },
   pointsUsed: { type: String, default: '3,125 / 9 pts' },
 })
 </script>
@@ -11,7 +11,7 @@ defineProps({
     <div class="bb-sep"></div>
     <span>OMOP CDM · PostgreSQL</span>
     <div class="bb-sep"></div>
-    <span style="color:#22C55E">● {{ activeBranches }} branches active</span>
+    <span style="color:#22C55E">● {{ activeCohorts }} cohorts active</span>
     <div class="bb-sep"></div>
     <span style="margin-left:auto">{{ pointsUsed }}</span>
     <div class="bb-sep"></div>

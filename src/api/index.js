@@ -33,19 +33,19 @@ export async function executeGraph(graphData) {
 // ── SQL Console ──────────────────────────────────────────────────────────────
 
 /**
- * Fetch the generated SQL for a given branch.
+ * Fetch the generated SQL for a given cohort.
  *
- * @param {'A' | 'B'} branch
+ * @param {'A' | 'B'} cohort
  * @returns {Promise<{ sql: string, generatedAt: string }>}
  *
- * TODO: GET /api/sql?branch=A
+ * TODO: GET /api/sql?cohort=A
  */
-export async function fetchSQL(branch) {
+export async function fetchSQL(cohort) {
   // TODO: implement
-  // const res = await fetch(`/api/sql?branch=${branch}`)
+  // const res = await fetch(`/api/sql?cohort=${cohort}`)
   // if (!res.ok) throw new Error('fetchSQL failed')
   // return res.json()
-  console.log('[API stub] fetchSQL called', branch)
+  console.log('[API stub] fetchSQL called', cohort)
   return { sql: '-- SQL not yet connected', generatedAt: null }
 }
 
@@ -75,7 +75,7 @@ export async function fetchAgentStatus() {
       { id: 'sql',          label: 'SQL',           status: 'running' },
       { id: 'omop',         label: 'OMOP',          status: 'idle' },
     ],
-    statusText: 'Processing node 2 of 3 in Branch A…',
+    statusText: 'Processing node 2 of 3 in Cohort A…',
     logLines: [
       'Criteria Agent: parsing node 2 (AND)',
       'SQL Agent: generating SQL for current node',
@@ -105,8 +105,8 @@ export async function sendChatMessage(message, graphContext) {
   // return res.json()
   console.log('[API stub] sendChatMessage called', message)
   const fallbacks = [
-    "Branch A is small because the NOT:ICU exclusion removed 60% of patients after applying the Hypertension criterion (SNOMED 38341003).",
-    "Branch B uses Age ≥ 45, gaining ~1,600 extra patients. The added SBP > 140 criterion ensures all included patients have documented hypertension severity.",
+    "Cohort A is small because the NOT:ICU exclusion removed 60% of patients after applying the Hypertension criterion (SNOMED 38341003).",
+    "Cohort B uses Age ≥ 45, gaining ~1,600 extra patients. The added SBP > 140 criterion ensures all included patients have documented hypertension severity.",
     "To add SBP criterion: press 'Add Criteria', type 'SBP > 140', and connect with an AND operator node after the Hypertension node.",
     "OMOP mapping for Hypertension: SNOMED concept 38341003 maps to condition_occurrence.",
     "Suggestion: try an OR node instead of AND between Hypertension and SBP > 140 for ~4,800 patients.",
@@ -117,12 +117,12 @@ export async function sendChatMessage(message, graphContext) {
 // ── Cohort Metrics ───────────────────────────────────────────────────────────
 
 /**
- * Fetch computed metric values for both cohorts.
+ * Fetch computed metric values for the selected cohorts.
  *
- * @param {{ branchA: string, branchB: string }} cohortIds - identifiers for the two cohorts
+ * @param {{ cohortA: string, cohortB: string }} cohortIds - identifiers for the selected cohorts
  * @returns {Promise<{ groups: { name: string, metrics: object[] }[] }>}
  *
- * TODO: GET /api/metrics?branchA=...&branchB=...
+ * TODO: GET /api/metrics?cohortA=...&cohortB=...
  */
 export async function fetchMetrics(cohortIds) {
   // TODO: implement

@@ -6,8 +6,8 @@ export function useAgent(graphRef) {
 
   const messages = ref([
     { type: 'agent', text: 'Criteria Agent' },
-    { type: 'bot',   text: 'Hi! I can help you build criteria, explain OMOP mappings, or compare branches.' },
-    { type: 'bot',   text: 'Try: "Why is Branch A small?" or "Add SBP criterion"' },
+    { type: 'bot',   text: 'Hi! I can help you build criteria, explain OMOP mappings, or compare cohorts.' },
+    { type: 'bot',   text: 'Try: "Why is Cohort A small?" or "Add SBP criterion"' },
   ])
 
   async function sendMessage(text) {
@@ -27,7 +27,7 @@ export function useAgent(graphRef) {
     { id: 'sql',          label: 'SQL',           status: 'running' },
     { id: 'omop',         label: 'OMOP',          status: 'idle' },
   ])
-  const statusText = ref('Processing node 2 of 3 in Branch A…')
+  const statusText = ref('Processing node 2 of 3 in Cohort A…')
   const logLines   = ref([
     'Criteria Agent: parsing node 2 (AND)',
     'SQL Agent: generating SQL for current node',

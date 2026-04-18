@@ -4,7 +4,7 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps({ data: Object })
 
-const isB    = computed(() => props.data.branch === 'b')
+const isB    = computed(() => props.data.cohort === 'b')
 const bc     = computed(() => isB.value ? '#8E7BE8' : '#2563EB')
 const tc     = computed(() => isB.value ? '#6D28D9' : '#1D4ED8')
 const bg     = computed(() => isB.value ? '#FCFAFF' : '#F0F5FF')

@@ -4,7 +4,7 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps({ data: Object })
 
-const isB = computed(() => props.data.branch === 'b')
+const isB = computed(() => props.data.cohort === 'b')
 const bg  = computed(() => isB.value ? 'linear-gradient(160deg,#6D28D9,#5B21B6)' : 'linear-gradient(160deg,#1E293B,#0F172A)')
 const sh  = computed(() => isB.value ? '0 4px 14px rgba(109,40,217,0.4)' : '0 4px 14px rgba(15,23,42,0.35)')
 const hc  = computed(() => isB.value ? '#8E7BE8' : '#2563EB')

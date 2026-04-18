@@ -4,7 +4,7 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps({ data: Object })
 
-const isB         = computed(() => props.data.branch === 'b')
+const isB         = computed(() => props.data.cohort === 'b')
 const borderColor = computed(() => isB.value ? '#8E7BE8' : '#2563EB')
 const shadowColor = computed(() => isB.value ? 'rgba(109,40,217,0.08)' : 'rgba(37,99,235,0.08)')
 </script>
