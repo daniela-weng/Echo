@@ -305,6 +305,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Range strip for N ≥ 3 cohorts (replaces single Δ with spread indicator) */
 .cp-range-strip{height:3px;border-radius:2px;min-width:6px;background:linear-gradient(90deg,#94A3B8,#64748B);opacity:.65}
 
+/* Metrics-table horizontal scroll. The outer container owns overflow; the
+   inner container is sized to max-content so fixed-px grid rows stay at
+   their natural width when the panel is narrower (N ≥ 3 case). */
+.cp-metrics-scroll{overflow-x:auto;overflow-y:hidden;margin:0 -14px;padding:0 14px}
+.cp-metrics-inner{min-width:max-content}
+
 /* Dumbbell chart — no extra CSS needed, drawn inline via SVG */
 
 /* Section labels — slim with rule */

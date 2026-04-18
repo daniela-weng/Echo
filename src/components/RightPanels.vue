@@ -24,18 +24,20 @@ const cohortGridStyle = computed(() => ({
   paddingBottom: '10px',
 }))
 
-// cp-table sizing (panel inner width ≈ 248px):
-//   N = 2: 80px metric label + 2·1fr values + 58px Δ summary
-//   N ≥ 3: 56px metric label + N·1fr values + 84px Range summary
-// The wider summary column at N ≥ 3 prevents clipping of range labels like
-// "59.8–66.1 yrs" (~78px at 10px font); we reclaim the extra width by
-// shrinking the metric label column (labels like "Avg Age" / "SBP filter"
-// fit at 56px).
+// cp-table sizing:
+//   N = 2: 80px label + 2·1fr values + 58px Δ summary  (fits panel width)
+//   N ≥ 3: 64px label + N·44px values + 108px Range summary (fixed widths)
+// For N ≥ 3 we switch values and range from flex units to fixed px widths so
+// the row has a natural width wider than the ~248px panel when necessary;
+// the Cohort Profile body scrolls horizontally (like Cohort Overlap) when
+// this happens, guaranteeing range labels like "59.8–66.1 yrs" never clip.
 const cpTableStyle = computed(() => {
   const isRange = cohorts.value.length >= 3
   return {
     display: 'grid',
-    gridTemplateColumns: `${isRange ? 56 : 80}px repeat(${cohorts.value.length}, 1fr) ${isRange ? 84 : 58}px`,
+    gridTemplateColumns: isRange
+      ? `64px repeat(${cohorts.value.length}, 44px) 108px`
+      : `80px repeat(${cohorts.value.length}, 1fr) 58px`,
     gap: '4px 6px',
     alignItems: 'center',
   }
@@ -298,75 +300,86 @@ const metricEditorOpen = ref(false)
             </div>
           </div>
 
-          <!-- Metrics table header -->
-          <div style="display:flex;align-items:center;padding-bottom:7px;border-bottom:1px solid #F3F4F6;margin-bottom:8px;margin-top:6px">
-            <div :style="{ ...cpTableStyle, flex: 1 }">
-              <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
-              <span
-                v-for="cohort in cohorts"
-                :key="`hd-${cohort.letter}`"
-                :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
-              >{{ cohort.letter }}</span>
-              <span style="font-size:12px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">{{ summaryHeader }}</span>
-            </div>
-            <button class="me-edit-btn" @click="metricEditorOpen = true" title="Edit metrics">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
-                <path d="M7 3l2 2" stroke="currentColor" stroke-width="1.1"/>
-              </svg>
-            </button>
-          </div>
+          <!-- Metrics table: horizontally scrollable for N≥3.
+               Pattern: outer overflow-x:auto + inner min-width:max-content
+               is what actually forces the browser to lay the grid rows out at
+               their natural (fixed-px) width rather than squishing them into
+               the panel. When the table fits (N=2), nothing scrolls. -->
+          <div class="cp-metrics-scroll">
+            <div class="cp-metrics-inner">
 
-          <!-- Metrics rows -->
-          <template v-for="group in metricGroups" :key="group.name">
-            <div class="cp-sec-lbl">{{ group.name }}</div>
-            <template v-for="m in group.metrics" :key="m.label">
-
-              <!-- Boolean flag row — chips align under cohort header cells -->
-              <div
-                v-if="m.kind === 'flag' || m.values?.[0] === 'incl' || m.values?.[0] === 'n/a'"
-                :style="{ ...cpTableStyle, marginBottom: '7px' }"
-              >
-                <span class="m">{{ m.label }}</span>
-                <span
-                  v-for="(v, vi) in m.values"
-                  :key="`f-${vi}`"
-                  :class="['cp-flag', v === 'incl' ? 'cp-flag-on' : 'cp-flag-off']"
-                  :style="v === 'incl' ? { justifySelf: 'center', background: `${cohorts[vi].color}1F`, color: cohorts[vi].color } : { justifySelf: 'center' }"
-                >{{ v === 'incl' ? '✓' : '—' }}</span>
-                <span></span>
+              <!-- Metrics table header -->
+              <div style="display:flex;align-items:center;padding-bottom:7px;border-bottom:1px solid #F3F4F6;margin-bottom:8px;margin-top:6px">
+                <div :style="cpTableStyle">
+                  <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
+                  <span
+                    v-for="cohort in cohorts"
+                    :key="`hd-${cohort.letter}`"
+                    :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
+                  >{{ cohort.letter }}</span>
+                  <span style="font-size:12px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">{{ summaryHeader }}</span>
+                </div>
+                <button class="me-edit-btn" @click="metricEditorOpen = true" title="Edit metrics" style="margin-left:8px">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+                    <path d="M7 3l2 2" stroke="currentColor" stroke-width="1.1"/>
+                  </svg>
+                </button>
               </div>
 
-              <!-- Numeric row — per-cohort values in the color of each cohort -->
-              <template v-else>
-                <div :style="{ ...cpTableStyle, marginBottom: '3px', alignItems: 'start' }">
-                  <span class="m" style="padding-top:1px">{{ m.label }}</span>
-                  <span
-                    v-for="(v, vi) in m.values"
-                    :key="`v-${vi}`"
-                    :style="{ fontSize: '12px', fontWeight: 700, color: cohorts[vi].color, textAlign: 'center' }"
-                  >{{ v }}</span>
-                  <div class="cp-delta-cell">
-                    <!-- N=2: classic delta badge + magnitude bar -->
-                    <template v-if="cohorts.length === 2">
-                      <span class="d" :class="m.dc">{{ m.delta }}</span>
-                      <div v-if="m.deltaMag" class="cp-delta-mag" :class="m.dc" :style="{ width: m.deltaMag + '%' }"></div>
-                    </template>
-                    <!-- N≥3: range label + min–max strip (Δ collapses to a spread indicator) -->
-                    <template v-else-if="rangeOf(m)">
-                      <span class="d d-nil" style="font-size:10px;white-space:nowrap;line-height:1.1">{{ rangeOf(m).label }}</span>
-                      <div class="cp-range-strip" :style="{ width: rangeOf(m).frac + '%' }"></div>
-                    </template>
-                    <template v-else>
-                      <span class="d d-nil">—</span>
-                    </template>
+              <!-- Metrics rows -->
+              <template v-for="group in metricGroups" :key="group.name">
+                <div class="cp-sec-lbl">{{ group.name }}</div>
+                <template v-for="m in group.metrics" :key="m.label">
+
+                  <!-- Boolean flag row — chips align under cohort header cells -->
+                  <div
+                    v-if="m.kind === 'flag' || m.values?.[0] === 'incl' || m.values?.[0] === 'n/a'"
+                    :style="{ ...cpTableStyle, marginBottom: '7px' }"
+                  >
+                    <span class="m">{{ m.label }}</span>
+                    <span
+                      v-for="(v, vi) in m.values"
+                      :key="`f-${vi}`"
+                      :class="['cp-flag', v === 'incl' ? 'cp-flag-on' : 'cp-flag-off']"
+                      :style="v === 'incl' ? { justifySelf: 'center', background: `${cohorts[vi].color}1F`, color: cohorts[vi].color } : { justifySelf: 'center' }"
+                    >{{ v === 'incl' ? '✓' : '—' }}</span>
+                    <span></span>
                   </div>
-                </div>
-                <div style="margin-bottom:6px"></div>
+
+                  <!-- Numeric row — per-cohort values in the color of each cohort -->
+                  <template v-else>
+                    <div :style="{ ...cpTableStyle, marginBottom: '3px', alignItems: 'start' }">
+                      <span class="m" style="padding-top:1px">{{ m.label }}</span>
+                      <span
+                        v-for="(v, vi) in m.values"
+                        :key="`v-${vi}`"
+                        :style="{ fontSize: '12px', fontWeight: 700, color: cohorts[vi].color, textAlign: 'center' }"
+                      >{{ v }}</span>
+                      <div class="cp-delta-cell">
+                        <!-- N=2: classic delta badge + magnitude bar -->
+                        <template v-if="cohorts.length === 2">
+                          <span class="d" :class="m.dc">{{ m.delta }}</span>
+                          <div v-if="m.deltaMag" class="cp-delta-mag" :class="m.dc" :style="{ width: m.deltaMag + '%' }"></div>
+                        </template>
+                        <!-- N≥3: range label + min–max strip (Δ collapses to a spread indicator) -->
+                        <template v-else-if="rangeOf(m)">
+                          <span class="d d-nil" style="font-size:10px;white-space:nowrap;line-height:1.1">{{ rangeOf(m).label }}</span>
+                          <div class="cp-range-strip" :style="{ width: rangeOf(m).frac + '%' }"></div>
+                        </template>
+                        <template v-else>
+                          <span class="d d-nil">—</span>
+                        </template>
+                      </div>
+                    </div>
+                    <div style="margin-bottom:6px"></div>
+                  </template>
+
+                </template>
               </template>
 
-            </template>
-          </template>
+            </div>
+          </div>
         </div>
       </div>
     </div>
