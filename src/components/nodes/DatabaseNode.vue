@@ -24,7 +24,10 @@ defineProps({ data: Object })
       </div>
     </div>
 
-    <Handle type="source" :position="Position.Bottom" id="src-a" style="left:30%;background:#93C5FD;border-color:#2563EB;width:8px;height:8px" />
-    <Handle type="source" :position="Position.Bottom" id="src-b" style="left:70%;background:#C4B5FD;border-color:#7C3AED;width:8px;height:8px" />
+    <!-- One source handle per active cohort slot; kept static for N=3 demo,
+         parametrize by prop when wiring a dynamic cohort list. -->
+    <Handle type="source" :position="Position.Bottom" id="src-a" style="left:22%;background:#93C5FD;border-color:#2563EB;width:8px;height:8px" />
+    <Handle type="source" :position="Position.Bottom" id="src-b" style="left:55%;background:#C4B5FD;border-color:#7C3AED;width:8px;height:8px" />
+    <Handle type="source" :position="Position.Bottom" id="src-c" style="left:85%;background:#FCD34D;border-color:#D97706;width:8px;height:8px" />
   </div>
 </template>

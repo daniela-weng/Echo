@@ -8,11 +8,13 @@ import BottomBar   from './components/BottomBar.vue'
 import { useGraph }   from './composables/useGraph.js'
 import { useAgent }   from './composables/useAgent.js'
 import { useMetrics } from './composables/useMetrics.js'
+import { useCohorts } from './composables/useCohorts.js'
 import { executeGraph } from './api/index.js'
 
 const { nodes, edges, applyExecutionResults } = useGraph()
 const { messages, sendMessage, pipelineSteps, statusText, logLines } = useAgent(nodes)
 const { groups, addGroup, deleteGroup, addMetric, deleteMetric } = useMetrics()
+const { activeCount } = useCohorts()
 
 const mobilePanelsOpen = ref(false)
 
@@ -25,7 +27,7 @@ async function onExecute() {
 <template>
   <TopBar
     project-name="Hypertension Patient Screening"
-    point-counter="3,753 / 12,345 pts"
+    point-counter="3,210 / 12,345 pts"
     @logout="console.log('logout')"
   />
 
@@ -62,5 +64,5 @@ async function onExecute() {
     </div>
   </div>
 
-  <BottomBar :active-cohorts="2" points-used="3,125 / 9 pts" />
+  <BottomBar :active-cohorts="activeCount" points-used="3,125 / 9 pts" />
 </template>

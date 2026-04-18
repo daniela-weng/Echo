@@ -1,0 +1,72 @@
+import { ref, computed } from 'vue'
+
+/**
+ * Shared active-cohorts registry. This is the single source of truth for which
+ * cohort slots are currently live in the workspace — every downstream panel
+ * (Cohort Overlap, Cohort Profile, UpSet plot, bottom bar counter) reads from
+ * here so adding or removing a cohort card propagates to every linked view.
+ *
+ * Each slot carries: { letter, name, color, size, criteria }.
+ * Colors come from the Okabe–Ito accessible palette so the design scales to
+ * ≥5 cohorts without the accent colors colliding.
+ */
+const COLOR_SLOTS = [
+  '#2563EB', // A — blue
+  '#7C3AED', // B — purple
+  '#D97706', // C — amber (Okabe–Ito)
+  '#0E7490', // D — teal
+  '#BE185D', // E — magenta
+]
+
+const DEFAULT_COHORTS = [
+  {
+    letter: 'A',
+    name: 'Cohort A',
+    tag: 'Baseline',
+    color: COLOR_SLOTS[0],
+    size: 1240,
+    criteria: ['Age ≥ 50', 'Hypertension', 'NOT ICU Stay'],
+  },
+  {
+    letter: 'B',
+    name: 'Cohort B',
+    tag: 'Alternative',
+    color: COLOR_SLOTS[1],
+    size: 2800,
+    criteria: ['Age ≥ 45 [NEW]', 'Hypertension', 'SBP > 140 [NEW]'],
+  },
+  {
+    letter: 'C',
+    name: 'Cohort C',
+    tag: 'Strict',
+    color: COLOR_SLOTS[2],
+    size: 620,
+    criteria: ['Age ≥ 50', 'Hypertension', 'SBP > 140', 'NOT T2D [NEW]'],
+  },
+]
+
+// Exhaustive intersection counts for the three demo cohorts. For general N, a
+// backend execute() would return this structure; here we pre-compute the seven
+// non-empty regions so the UpSet panel can render without a server round-trip.
+// Constraints: sizes sum to cohort totals (see comments).
+//   A = 190 + 550 + 150 + 350 = 1,240 ✓
+//   B = 1850 + 550 + 50 + 350 = 2,800 ✓
+//   C = 70 + 150 + 50 + 350 =   620 ✓
+const DEFAULT_INTERSECTIONS_3 = [
+  { sets: [1],       size: 1850 },  // B only
+  { sets: [0, 1],    size:  550 },  // A ∩ B (no C)
+  { sets: [0, 1, 2], size:  350 },  // A ∩ B ∩ C
+  { sets: [0],       size:  190 },  // A only
+  { sets: [0, 2],    size:  150 },  // A ∩ C (no B)
+  { sets: [2],       size:   70 },  // C only
+  { sets: [1, 2],    size:   50 },  // B ∩ C (no A)
+]
+
+const cohorts = ref(DEFAULT_COHORTS.map(c => ({ ...c })))
+const intersections = ref(DEFAULT_INTERSECTIONS_3.map(i => ({ ...i })))
+
+export function useCohorts() {
+  const activeLetters = computed(() => cohorts.value.map(c => c.letter))
+  const activeCount   = computed(() => cohorts.value.length)
+  return { cohorts, intersections, activeLetters, activeCount }
+}

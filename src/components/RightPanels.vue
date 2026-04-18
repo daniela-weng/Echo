@@ -1,24 +1,54 @@
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import MetricEditorModal from './MetricEditorModal.vue'
 import UpSetPlot from './UpSetPlot.vue'
+import { useCohorts } from '../composables/useCohorts.js'
 
-// --- Cohort Overlap demo data ---
-// In production these would come from executeGraph results.
-// With A=1,240 and B=2,800 sharing 900 patients (see Insights):
-//   A only     = 1,240 - 900 = 340
-//   A ∩ B      = 900
-//   B only     = 2,800 - 900 = 1,900
-const overlapCohorts = [
-  { name: 'Cohort A', size: 1240, color: '#2563EB' },   // blue
-  { name: 'Cohort B', size: 2800, color: '#7C3AED' },   // purple
-]
-// Intersections pre-sorted by size descending. `sets` holds indices into overlapCohorts.
-const overlapIntersections = [
-  { sets: [1],    size: 1900 },   // B only
-  { sets: [0, 1], size:  900 },   // A ∩ B
-  { sets: [0],    size:  340 },   // A only
-]
+// ── Shared cohort registry (single source of truth for every panel below) ──
+const { cohorts, intersections } = useCohorts()
+
+// UpSetPlot wants {name, size, color}. cohorts already carries name/size/color.
+const overlapCohorts = cohorts
+const overlapIntersections = computed(() =>
+  [...intersections.value].sort((a, b) => b.size - a.size)
+)
+
+// ── N-cohort layout tokens ──
+// Four-card columns are too wide for 3+ cohorts at 244px panel width, so we let
+// the profile grid be 1-column when N ≥ 3 (stacking the cohort cards) and
+// 2-column otherwise. The metric table grid is sized dynamically from N.
+const cohortGridStyle = computed(() => ({
+  display: 'grid',
+  gridTemplateColumns: cohorts.value.length >= 3 ? '1fr' : `repeat(${cohorts.value.length}, 1fr)`,
+  gap: '7px',
+  paddingBottom: '10px',
+}))
+
+// cp-table has fixed 80px metric-label + N value cells + 58px summary column.
+const cpTableStyle = computed(() => ({
+  display: 'grid',
+  gridTemplateColumns: `80px repeat(${cohorts.value.length}, 1fr) 58px`,
+  gap: '4px 6px',
+  alignItems: 'center',
+}))
+
+// Header label for the summary column: "Δ" for pairwise, "Range" for ≥3.
+const summaryHeader = computed(() => cohorts.value.length === 2 ? 'Δ' : 'Range')
+
+// Compute a range-strip descriptor for a numeric metric when N ≥ 3.
+// Returns { min, max, label, frac } where frac maps the [min..max] window into
+// the summary cell as a thin bar (consistent with cp-delta-mag affordance).
+function rangeOf(m) {
+  if (!m.nums || m.nums.length < 2) return null
+  const min = Math.min(...m.nums)
+  const max = Math.max(...m.nums)
+  const span = Math.max(1e-6, Math.max(...m.nums.map(Math.abs)))
+  const frac = Math.min(100, Math.round(((max - min) / span) * 100))
+  const unit = m.unit || ''
+  const isPct = unit === '%'
+  const fmt = v => (isPct ? `${Math.round(v)}` : (Number.isInteger(v) ? `${v}` : v.toFixed(1)))
+  return { min, max, label: `${fmt(min)}–${fmt(max)}${unit}`, frac }
+}
 
 const props = defineProps({
   pipelineSteps: Array,
@@ -205,14 +235,15 @@ const metricEditorOpen = ref(false)
         <span class="material-symbols-outlined accordion-chevron">chevron_right</span>
       </button>
       <div class="accordion-content">
-        <div class="accordion-body">
-          <!-- UpSet plot: exclusive and shared patient subsets across selected cohorts.
-               Set-size bars and counts inside the plot replace the previous summary rows. -->
+        <!-- Horizontal scroll kicks in only when UpSet needs more width than
+             the panel (e.g., N ≥ 3 cohorts with 7 intersection columns). For
+             the N = 2 case the SVG fits at 244px and no scroll bar appears. -->
+        <div class="accordion-body" style="overflow-x:auto">
           <UpSetPlot
             :cohorts="overlapCohorts"
             :intersections="overlapIntersections"
             :width="244"
-            :height="134"
+            :height="cohorts.length >= 3 ? 176 : 134"
           />
         </div>
       </div>
@@ -227,37 +258,47 @@ const metricEditorOpen = ref(false)
       </button>
       <div class="accordion-content">
         <div class="accordion-body">
-          <!-- Cohort summary cards -->
-          <div class="cp-cohorts">
-            <div class="cp-cohort a">
-              <div class="cp-cohort-tag">Cohort A · Baseline</div>
-              <div class="cp-cohort-n">1,240</div>
-              <div class="cp-cohort-sub">3 criteria</div>
+          <!-- Cohort summary cards — N-scalable via cohorts registry -->
+          <div class="cp-cohorts" :style="cohortGridStyle">
+            <div
+              v-for="cohort in cohorts"
+              :key="cohort.letter"
+              class="cp-cohort"
+              :style="{
+                background: `${cohort.color}0D`,
+                borderColor: `${cohort.color}80`,
+                boxShadow: `0 2px 5px ${cohort.color}1F`,
+              }"
+            >
+              <div class="cp-cohort-tag" :style="{ color: cohort.color }">
+                {{ cohort.name }} · {{ cohort.tag }}
+              </div>
+              <div class="cp-cohort-n" :style="{ color: cohort.color }">
+                {{ cohort.size.toLocaleString() }}
+              </div>
+              <div class="cp-cohort-sub">{{ cohort.criteria.length }} criteria</div>
               <ul class="cp-cohort-criteria">
-                <li>Age ≥ 50</li>
-                <li>Hypertension</li>
-                <li>NOT ICU Stay</li>
-              </ul>
-            </div>
-            <div class="cp-cohort b">
-              <div class="cp-cohort-tag">Cohort B · Alternative</div>
-              <div class="cp-cohort-n">2,800</div>
-              <div class="cp-cohort-sub">4 criteria</div>
-              <ul class="cp-cohort-criteria">
-                <li>Age ≥ 45 <span style="background:#EDE9FE;color:#6D28D9;font-size:11px;font-weight:700;padding:1px 4px;border-radius:3px">[NEW]</span></li>
-                <li>Hypertension</li>
-                <li>SBP &gt; 140 <span style="background:#EDE9FE;color:#6D28D9;font-size:11px;font-weight:700;padding:1px 4px;border-radius:3px">[NEW]</span></li>
+                <li v-for="(crit, ci) in cohort.criteria" :key="ci">
+                  <template v-if="crit.endsWith('[NEW]')">
+                    {{ crit.replace(' [NEW]', '') }}
+                    <span :style="{ background: `${cohort.color}1F`, color: cohort.color, fontSize: '11px', fontWeight: 700, padding: '1px 4px', borderRadius: '3px' }">[NEW]</span>
+                  </template>
+                  <template v-else>{{ crit }}</template>
+                </li>
               </ul>
             </div>
           </div>
 
           <!-- Metrics table header -->
           <div style="display:flex;align-items:center;padding-bottom:7px;border-bottom:1px solid #F3F4F6;margin-bottom:8px;margin-top:6px">
-            <div class="cp-table" style="flex:1">
+            <div :style="{ ...cpTableStyle, flex: 1 }">
               <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
-              <span style="font-size:11px;font-weight:700;color:#2563EB;text-align:center;letter-spacing:0.5px;text-transform:uppercase">A</span>
-              <span style="font-size:11px;font-weight:700;color:#7C3AED;text-align:center;letter-spacing:0.5px;text-transform:uppercase">B</span>
-              <span style="font-size:12px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">Δ</span>
+              <span
+                v-for="cohort in cohorts"
+                :key="`hd-${cohort.letter}`"
+                :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
+              >{{ cohort.letter }}</span>
+              <span style="font-size:12px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">{{ summaryHeader }}</span>
             </div>
             <button class="me-edit-btn" @click="metricEditorOpen = true" title="Edit metrics">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -272,23 +313,44 @@ const metricEditorOpen = ref(false)
             <div class="cp-sec-lbl">{{ group.name }}</div>
             <template v-for="m in group.metrics" :key="m.label">
 
-              <!-- Boolean flag row — uses same grid so chips align under A/B headers -->
-              <div v-if="m.valA === 'incl' || m.valA === 'n/a'" class="cp-table" style="margin-bottom:7px">
+              <!-- Boolean flag row — chips align under cohort header cells -->
+              <div
+                v-if="m.kind === 'flag' || m.values?.[0] === 'incl' || m.values?.[0] === 'n/a'"
+                :style="{ ...cpTableStyle, marginBottom: '7px' }"
+              >
                 <span class="m">{{ m.label }}</span>
-                <span :class="['cp-flag', m.valA === 'incl' ? 'cp-flag-a' : 'cp-flag-off']" style="justify-self:center">{{ m.valA === 'incl' ? '✓' : '—' }}</span>
-                <span :class="['cp-flag', m.valB === 'incl' ? 'cp-flag-b' : 'cp-flag-off']" style="justify-self:center">{{ m.valB === 'incl' ? '✓' : '—' }}</span>
+                <span
+                  v-for="(v, vi) in m.values"
+                  :key="`f-${vi}`"
+                  :class="['cp-flag', v === 'incl' ? 'cp-flag-on' : 'cp-flag-off']"
+                  :style="v === 'incl' ? { justifySelf: 'center', background: `${cohorts[vi].color}1F`, color: cohorts[vi].color } : { justifySelf: 'center' }"
+                >{{ v === 'incl' ? '✓' : '—' }}</span>
                 <span></span>
               </div>
 
-              <!-- Numeric row -->
+              <!-- Numeric row — per-cohort values in the color of each cohort -->
               <template v-else>
-                <div class="cp-table" style="margin-bottom:3px;align-items:start">
+                <div :style="{ ...cpTableStyle, marginBottom: '3px', alignItems: 'start' }">
                   <span class="m" style="padding-top:1px">{{ m.label }}</span>
-                  <span class="a">{{ m.valA }}</span>
-                  <span class="b">{{ m.valB }}</span>
+                  <span
+                    v-for="(v, vi) in m.values"
+                    :key="`v-${vi}`"
+                    :style="{ fontSize: '12px', fontWeight: 700, color: cohorts[vi].color, textAlign: 'center' }"
+                  >{{ v }}</span>
                   <div class="cp-delta-cell">
-                    <span class="d" :class="m.dc">{{ m.delta }}</span>
-                    <div v-if="m.deltaMag" class="cp-delta-mag" :class="m.dc" :style="{ width: m.deltaMag + '%' }"></div>
+                    <!-- N=2: classic delta badge + magnitude bar -->
+                    <template v-if="cohorts.length === 2">
+                      <span class="d" :class="m.dc">{{ m.delta }}</span>
+                      <div v-if="m.deltaMag" class="cp-delta-mag" :class="m.dc" :style="{ width: m.deltaMag + '%' }"></div>
+                    </template>
+                    <!-- N≥3: range label + min–max strip (Δ collapses to a spread indicator) -->
+                    <template v-else-if="rangeOf(m)">
+                      <span class="d d-nil" style="font-size:10px">{{ rangeOf(m).label }}</span>
+                      <div class="cp-range-strip" :style="{ width: rangeOf(m).frac + '%' }"></div>
+                    </template>
+                    <template v-else>
+                      <span class="d d-nil">—</span>
+                    </template>
                   </div>
                 </div>
                 <div style="margin-bottom:6px"></div>

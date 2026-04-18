@@ -4,10 +4,12 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps({ data: Object })
 
-const isB    = computed(() => props.data.cohort === 'b')
-const bc     = computed(() => isB.value ? '#8E7BE8' : '#2563EB')
-const tc     = computed(() => isB.value ? '#6D28D9' : '#1D4ED8')
-const bg     = computed(() => isB.value ? '#FCFAFF' : '#F0F5FF')
+const BC = { a: '#2563EB', b: '#8E7BE8', c: '#D97706', d: '#0E7490', e: '#BE185D' }
+const TC = { a: '#1D4ED8', b: '#6D28D9', c: '#B45309', d: '#0E7490', e: '#9D174D' }
+const BG = { a: '#F0F5FF', b: '#FCFAFF', c: '#FFFBEB', d: '#ECFEFF', e: '#FDF2F8' }
+const bc = computed(() => BC[props.data.cohort] || BC.a)
+const tc = computed(() => TC[props.data.cohort] || TC.a)
+const bg = computed(() => BG[props.data.cohort] || BG.a)
 </script>
 
 <template>

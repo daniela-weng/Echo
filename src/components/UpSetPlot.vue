@@ -35,17 +35,24 @@ const CONNECT_STROKE = '#475569'
 const INTER_BAR_FILL = '#64748B'
 const BAR_TRACK_FILL = '#F1F5F9'
 
+// Minimum horizontal distance between intersection-column centers. 28px gives
+// the widest 12px count label (≈24px for "1,850") a 4px breathing gap and
+// leaves 18px of clear space between 10px-diameter dots.
+const MIN_COL_STEP = 28
+const COL_EDGE_RIGHT = 22
+const COL_EDGE_LEFT  = 16
+
 const layout = computed(() => {
   const { cohorts, intersections, width } = props
 
   const N = Math.max(1, intersections.length)
-  // Column centers are padded by COL_EDGE from the SVG right edge so both the
-  // count label AND the dot have visual breathing room matching the 8px inner
-  // padding inside Cohort Profile cards. 22 ≈ half-label-width (14) + card padding.
-  const COL_EDGE_RIGHT = 22
-  const COL_EDGE_LEFT  = 16
+  // Widen the SVG if the caller-provided width can't fit N columns at
+  // MIN_COL_STEP — the accordion body enables horizontal scroll when this
+  // exceeds the panel's inner width (scales cleanly to any N).
+  const minContentW = MATRIX_X0 + COL_EDGE_LEFT + (N - 1) * MIN_COL_STEP + COL_EDGE_RIGHT
+  const svgW = Math.max(width, minContentW)
   const firstX = MATRIX_X0 + COL_EDGE_LEFT
-  const lastX  = width - COL_EDGE_RIGHT
+  const lastX  = svgW - COL_EDGE_RIGHT
   const step   = N > 1 ? (lastX - firstX) / (N - 1) : 0
 
   const maxSize  = Math.max(1, ...cohorts.map(c => c.size))
@@ -70,7 +77,7 @@ const layout = computed(() => {
     return { ...inter, idx: j, x, h, barY }
   })
 
-  return { rows, cols }
+  return { rows, cols, svgW }
 })
 
 const fmt = n => n.toLocaleString()
@@ -78,8 +85,8 @@ const fmt = n => n.toLocaleString()
 
 <template>
   <svg
-    :viewBox="`0 0 ${width} ${height}`"
-    :width="width"
+    :viewBox="`0 0 ${layout.svgW} ${height}`"
+    :width="layout.svgW"
     :height="height"
     :style="{ display: 'block', overflow: 'visible' }"
     role="img"
@@ -109,7 +116,7 @@ const fmt = n => n.toLocaleString()
     <line
       :x1="NAME_X"
       :y1="MATRIX_Y0 - 6"
-      :x2="width"
+      :x2="layout.svgW"
       :y2="MATRIX_Y0 - 6"
       stroke="#E5E7EB"
       stroke-width="1"

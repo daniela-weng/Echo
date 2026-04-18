@@ -4,9 +4,11 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps({ data: Object })
 
-const isB         = computed(() => props.data.cohort === 'b')
-const borderColor = computed(() => isB.value ? '#8E7BE8' : '#2563EB')
-const shadowColor = computed(() => isB.value ? 'rgba(109,40,217,0.08)' : 'rgba(37,99,235,0.08)')
+// Per-cohort accent tokens — keep in sync with useCohorts.js COLOR_SLOTS.
+const BORDER = { a: '#2563EB', b: '#8E7BE8', c: '#D97706', d: '#0E7490', e: '#BE185D' }
+const SHADOW = { a: 'rgba(37,99,235,0.08)', b: 'rgba(109,40,217,0.08)', c: 'rgba(217,119,6,0.10)', d: 'rgba(14,116,144,0.10)', e: 'rgba(190,24,93,0.10)' }
+const borderColor = computed(() => BORDER[props.data.cohort] || BORDER.a)
+const shadowColor = computed(() => SHADOW[props.data.cohort] || SHADOW.a)
 </script>
 
 <template>

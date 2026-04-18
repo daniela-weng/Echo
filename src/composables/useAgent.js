@@ -7,7 +7,7 @@ export function useAgent(graphRef) {
   const messages = ref([
     { type: 'agent', text: 'Criteria Agent' },
     { type: 'bot',   text: 'Hi! I can help you build criteria, explain OMOP mappings, or compare cohorts.' },
-    { type: 'bot',   text: 'Try: "Why is Cohort A small?" or "Add SBP criterion"' },
+    { type: 'bot',   text: 'Try: "Why is Cohort A small?" or "Tighten Cohort C to exclude T2D"' },
   ])
 
   async function sendMessage(text) {

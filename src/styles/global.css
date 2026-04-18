@@ -219,7 +219,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cp-chat-inp input{flex:1;border:none;padding:7px 9px;font-size:11px;outline:none;color:#1E293B;background:transparent}
 .cp-chat-inp button{padding:7px 9px;border:none;background:none;cursor:pointer;color:#2563EB}
 .cp-cohorts{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding-bottom:10px}
-.cp-cohort{border-radius:7px;padding:8px;border:1.5px solid}
+.cp-cohort{border-radius:7px;padding:8px;border:1.5px solid;background:#F8FAFC}
 .cp-cohort.a{background:#F8FAFC;border-color:#BFDBFE}
 .cp-cohort.b{background:#F5F3FF;border-color:#8E7BE8;box-shadow:0 2px 5px rgba(124,58,237,0.12)}
 .cp-cohort-tag{font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:4px}
@@ -285,6 +285,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chatbot-btn:hover{background:#2563EB;transform:scale(1.05)}
 
 /* ── COHORT PROFILE TABLE ── */
+/* Default grid is 2-cohort (80px metric + 2 values + 58px Δ); callers override
+   via inline style for N ≥ 3 so the template scales to any cohort count. */
 .cp-table{display:grid;grid-template-columns:80px 1fr 1fr 58px;gap:4px 6px;align-items:center}
 .cp-table .m{font-size:11px;font-weight:500;color:#1F2937;white-space:nowrap}
 .cp-table .a{font-size:12px;font-weight:700;color:#2563EB;text-align:center}
@@ -299,6 +301,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cp-delta-mag{height:3px;border-radius:2px;min-width:4px;opacity:0.55}
 .cp-delta-mag.d-neg{background:#EF4444}
 .cp-delta-mag.d-pos{background:#16A34A}
+
+/* Range strip for N ≥ 3 cohorts (replaces single Δ with spread indicator) */
+.cp-range-strip{height:3px;border-radius:2px;min-width:6px;background:linear-gradient(90deg,#94A3B8,#64748B);opacity:.65}
 
 /* Dumbbell chart — no extra CSS needed, drawn inline via SVG */
 

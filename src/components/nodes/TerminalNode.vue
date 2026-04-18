@@ -4,10 +4,24 @@ import { Handle, Position } from '@vue-flow/core'
 
 const props = defineProps({ data: Object })
 
-const isB = computed(() => props.data.cohort === 'b')
-const bg  = computed(() => isB.value ? 'linear-gradient(160deg,#6D28D9,#5B21B6)' : 'linear-gradient(160deg,#1E293B,#0F172A)')
-const sh  = computed(() => isB.value ? '0 4px 14px rgba(109,40,217,0.4)' : '0 4px 14px rgba(15,23,42,0.35)')
-const hc  = computed(() => isB.value ? '#8E7BE8' : '#2563EB')
+const BG = {
+  a: 'linear-gradient(160deg,#1E293B,#0F172A)',
+  b: 'linear-gradient(160deg,#6D28D9,#5B21B6)',
+  c: 'linear-gradient(160deg,#B45309,#92400E)',
+  d: 'linear-gradient(160deg,#0E7490,#155E75)',
+  e: 'linear-gradient(160deg,#9D174D,#831843)',
+}
+const SH = {
+  a: '0 4px 14px rgba(15,23,42,0.35)',
+  b: '0 4px 14px rgba(109,40,217,0.4)',
+  c: '0 4px 14px rgba(180,83,9,0.4)',
+  d: '0 4px 14px rgba(14,116,144,0.4)',
+  e: '0 4px 14px rgba(157,23,77,0.4)',
+}
+const HC = { a: '#2563EB', b: '#8E7BE8', c: '#D97706', d: '#0E7490', e: '#BE185D' }
+const bg = computed(() => BG[props.data.cohort] || BG.a)
+const sh = computed(() => SH[props.data.cohort] || SH.a)
+const hc = computed(() => HC[props.data.cohort] || HC.a)
 </script>
 
 <template>
