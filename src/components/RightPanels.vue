@@ -14,23 +14,32 @@ const overlapIntersections = computed(() =>
 )
 
 // ── N-cohort layout tokens ──
-// Four-card columns are too wide for 3+ cohorts at 244px panel width, so we let
-// the profile grid be 1-column when N ≥ 3 (stacking the cohort cards) and
-// 2-column otherwise. The metric table grid is sized dynamically from N.
+// Cohort cards always use a 2-column grid so 3 cohorts wrap naturally into a
+// 2-up top row + single card below (instead of a tall 1×N column). For N = 1
+// we fall back to 1fr so the single card takes full width.
 const cohortGridStyle = computed(() => ({
   display: 'grid',
-  gridTemplateColumns: cohorts.value.length >= 3 ? '1fr' : `repeat(${cohorts.value.length}, 1fr)`,
+  gridTemplateColumns: cohorts.value.length <= 1 ? '1fr' : '1fr 1fr',
   gap: '7px',
   paddingBottom: '10px',
 }))
 
-// cp-table has fixed 80px metric-label + N value cells + 58px summary column.
-const cpTableStyle = computed(() => ({
-  display: 'grid',
-  gridTemplateColumns: `80px repeat(${cohorts.value.length}, 1fr) 58px`,
-  gap: '4px 6px',
-  alignItems: 'center',
-}))
+// cp-table sizing (panel inner width ≈ 248px):
+//   N = 2: 80px metric label + 2·1fr values + 58px Δ summary
+//   N ≥ 3: 56px metric label + N·1fr values + 84px Range summary
+// The wider summary column at N ≥ 3 prevents clipping of range labels like
+// "59.8–66.1 yrs" (~78px at 10px font); we reclaim the extra width by
+// shrinking the metric label column (labels like "Avg Age" / "SBP filter"
+// fit at 56px).
+const cpTableStyle = computed(() => {
+  const isRange = cohorts.value.length >= 3
+  return {
+    display: 'grid',
+    gridTemplateColumns: `${isRange ? 56 : 80}px repeat(${cohorts.value.length}, 1fr) ${isRange ? 84 : 58}px`,
+    gap: '4px 6px',
+    alignItems: 'center',
+  }
+})
 
 // Header label for the summary column: "Δ" for pairwise, "Range" for ≥3.
 const summaryHeader = computed(() => cohorts.value.length === 2 ? 'Δ' : 'Range')
@@ -345,7 +354,7 @@ const metricEditorOpen = ref(false)
                     </template>
                     <!-- N≥3: range label + min–max strip (Δ collapses to a spread indicator) -->
                     <template v-else-if="rangeOf(m)">
-                      <span class="d d-nil" style="font-size:10px">{{ rangeOf(m).label }}</span>
+                      <span class="d d-nil" style="font-size:10px;white-space:nowrap;line-height:1.1">{{ rangeOf(m).label }}</span>
                       <div class="cp-range-strip" :style="{ width: rangeOf(m).frac + '%' }"></div>
                     </template>
                     <template v-else>
