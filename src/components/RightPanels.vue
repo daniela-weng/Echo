@@ -24,19 +24,19 @@ const cohortGridStyle = computed(() => ({
   paddingBottom: '10px',
 }))
 
-// cp-table sizing:
-//   N = 2: 80px label + 2·1fr values + 58px Δ summary  (fits panel width)
-//   N ≥ 3: 64px label + N·44px values + 108px Range summary (fixed widths)
-// For N ≥ 3 we switch values and range from flex units to fixed px widths so
-// the row has a natural width wider than the ~248px panel when necessary;
-// the Cohort Profile body scrolls horizontally (like Cohort Overlap) when
-// this happens, guaranteeing range labels like "59.8–66.1 yrs" never clip.
+// cp-table sizing (right rail is 320px wide → ~296px inner width):
+//   N = 2: 80px label + 2·1fr values + 58px Δ summary  (fits panel naturally)
+//   N ≥ 3: 58px label + N·44px values + 86px Range summary (fixed widths)
+// At N = 3 the fixed layout sums to 58+132+86+24=300px, which matches the
+// 296px inner width after padding so the Range column is visible by default.
+// Panels with N ≥ 4 overflow and gain a horizontal scrollbar automatically
+// (same behavior as Cohort Overlap's UpSet plot).
 const cpTableStyle = computed(() => {
   const isRange = cohorts.value.length >= 3
   return {
     display: 'grid',
     gridTemplateColumns: isRange
-      ? `64px repeat(${cohorts.value.length}, 44px) 108px`
+      ? `58px repeat(${cohorts.value.length}, 44px) 86px`
       : `80px repeat(${cohorts.value.length}, 1fr) 58px`,
     gap: '4px 6px',
     alignItems: 'center',
@@ -300,31 +300,40 @@ const metricEditorOpen = ref(false)
             </div>
           </div>
 
-          <!-- Metrics table: horizontally scrollable for N≥3.
-               Pattern: outer overflow-x:auto + inner min-width:max-content
-               is what actually forces the browser to lay the grid rows out at
-               their natural (fixed-px) width rather than squishing them into
-               the panel. When the table fits (N=2), nothing scrolls. -->
+          <!-- Metrics toolbar: a "METRICS" section label on the left and a
+               labeled "Edit Metrics" button on the right. This replaces the
+               bare pen icon that used to hide inside the column header (and
+               scrolled off-panel with the Range column). Keeping the button
+               here — above the scrollable table — guarantees it's visible
+               at first glance regardless of cohort count. -->
+          <div class="cp-metrics-toolbar">
+            <span class="cp-metrics-toolbar-label">Metrics</span>
+            <button class="cp-edit-metrics-btn" @click="metricEditorOpen = true" title="Edit which metrics are shown">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                <path d="M7 3l2 2" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+              Edit Metrics
+            </button>
+          </div>
+
+          <!-- Metrics table: horizontally scrollable only when it overflows
+               (N ≥ 4). At N = 3 the table is sized to fit the 320px panel so
+               the Range column is visible without scrolling. Same outer
+               overflow-x:auto + inner min-width:max-content pattern used by
+               Cohort Overlap. -->
           <div class="cp-metrics-scroll">
             <div class="cp-metrics-inner">
 
-              <!-- Metrics table header -->
-              <div style="display:flex;align-items:center;padding-bottom:7px;border-bottom:1px solid #F3F4F6;margin-bottom:8px;margin-top:6px">
-                <div :style="cpTableStyle">
-                  <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
-                  <span
-                    v-for="cohort in cohorts"
-                    :key="`hd-${cohort.letter}`"
-                    :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
-                  >{{ cohort.letter }}</span>
-                  <span style="font-size:12px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">{{ summaryHeader }}</span>
-                </div>
-                <button class="me-edit-btn" @click="metricEditorOpen = true" title="Edit metrics" style="margin-left:8px">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
-                    <path d="M7 3l2 2" stroke="currentColor" stroke-width="1.1"/>
-                  </svg>
-                </button>
+              <!-- Metrics table header (column labels) -->
+              <div :style="{ ...cpTableStyle, paddingBottom: '7px', borderBottom: '1px solid #F3F4F6', marginBottom: '8px' }">
+                <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
+                <span
+                  v-for="cohort in cohorts"
+                  :key="`hd-${cohort.letter}`"
+                  :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
+                >{{ cohort.letter }}</span>
+                <span style="font-size:11px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">{{ summaryHeader }}</span>
               </div>
 
               <!-- Metrics rows -->
@@ -362,10 +371,9 @@ const metricEditorOpen = ref(false)
                           <span class="d" :class="m.dc">{{ m.delta }}</span>
                           <div v-if="m.deltaMag" class="cp-delta-mag" :class="m.dc" :style="{ width: m.deltaMag + '%' }"></div>
                         </template>
-                        <!-- N≥3: range label + min–max strip (Δ collapses to a spread indicator) -->
+                        <!-- N≥3: range label only (Δ collapses to a spread indicator) -->
                         <template v-else-if="rangeOf(m)">
                           <span class="d d-nil" style="font-size:10px;white-space:nowrap;line-height:1.1">{{ rangeOf(m).label }}</span>
-                          <div class="cp-range-strip" :style="{ width: rangeOf(m).frac + '%' }"></div>
                         </template>
                         <template v-else>
                           <span class="d d-nil">—</span>

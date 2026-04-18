@@ -69,7 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sql-close:hover{background:#334155;color:#94A3B8}
 
 /* ── RIGHT PANELS ── */
-.right-panels{width:272px;display:flex;flex-direction:column;border-left:1px solid #E2E8F0;background:#F8FAFC;flex-shrink:0;overflow:hidden}
+.right-panels{width:320px;display:flex;flex-direction:column;border-left:1px solid #E2E8F0;background:#F8FAFC;flex-shrink:0;overflow:hidden}
 .right-panels-scroll{flex:1;overflow-y:auto;min-height:0}
 .panel-card{background:#fff;border-bottom:1px solid #E2E8F0;padding:14px}
 .panel-header{display:flex;align-items:center;gap:7px;margin-bottom:9px;font-weight:600;font-size:12px;color:#1E293B}
@@ -302,9 +302,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cp-delta-mag.d-neg{background:#EF4444}
 .cp-delta-mag.d-pos{background:#16A34A}
 
-/* Range strip for N ≥ 3 cohorts (replaces single Δ with spread indicator) */
-.cp-range-strip{height:3px;border-radius:2px;min-width:6px;background:linear-gradient(90deg,#94A3B8,#64748B);opacity:.65}
-
 /* Metrics-table horizontal scroll. The outer container owns overflow; the
    inner container is sized to max-content so fixed-px grid rows stay at
    their natural width when the panel is narrower (N ≥ 3 case). */
@@ -358,6 +355,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .me-save:hover{background:#1D4ED8}
 .me-edit-btn{width:20px;height:20px;border-radius:4px;border:none;background:none;cursor:pointer;color:#94A3B8;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .me-edit-btn:hover{background:#F1F5F9;color:#475569}
+
+/* Labeled "Edit Metrics" button — lives above the column header so users
+   discover the metric-editor without needing to scroll the table right. */
+.cp-metrics-toolbar{display:flex;align-items:center;justify-content:space-between;margin:6px 0 2px;gap:8px}
+.cp-metrics-toolbar-label{font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:.8px;text-transform:uppercase}
+.cp-edit-metrics-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid #E2E8F0;border-radius:999px;background:#FFFFFF;color:#475569;font-size:11px;font-weight:500;cursor:pointer;line-height:1;white-space:nowrap}
+.cp-edit-metrics-btn:hover{background:#F1F5F9;border-color:#CBD5E1;color:#1F2937}
+.cp-edit-metrics-btn svg{flex-shrink:0}
 
 /* ── TOOLBAR DROPDOWN ── */
 .toolbar-secondary{display:contents}
