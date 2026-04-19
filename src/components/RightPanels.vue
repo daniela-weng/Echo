@@ -362,11 +362,8 @@ const metricEditorOpen = ref(false)
                at first glance regardless of cohort count. -->
           <div class="cp-metrics-toolbar">
             <span class="cp-metrics-toolbar-label">Metrics</span>
-            <button class="cp-edit-metrics-btn" @click="metricEditorOpen = true" title="Edit which metrics are shown">
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <path d="M8.5 1.5l2 2-6 6H2.5v-2l6-6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
-                <path d="M7 3l2 2" stroke="currentColor" stroke-width="1.2"/>
-              </svg>
+            <button class="btn" @click="metricEditorOpen = true" title="Edit which metrics are shown">
+              <span class="material-symbols-outlined" style="font-size:12px">edit</span>
               Edit Metrics
             </button>
           </div>
