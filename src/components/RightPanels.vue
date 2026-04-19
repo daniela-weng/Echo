@@ -5,36 +5,49 @@ import UpSetPlot from './UpSetPlot.vue'
 import { useCohorts } from '../composables/useCohorts.js'
 
 // ── Shared cohort registry (single source of truth for every panel below) ──
-// `cohorts` is the full registry (everything on the canvas); `visibleCohorts`
-// is the subset the user has toggled ON for comparison. Every panel below
-// consumes `visibleCohorts`/`visibleIntersections` so hiding a cohort from
-// its Target pill propagates instantly across Overlap, Profile, and Insights
-// without removing the cohort from the canvas.
-const { cohorts, visibleCohorts, visibleIntersections, toggleVisibility } = useCohorts()
+// `cohorts` is the full registry (everything on the canvas). Right-side panels
+// render EVERY cohort so the reader can see what they've parked, but hidden
+// cohorts render in a muted/greyed-out state so the active comparison still
+// reads clearly. `visibleIntersections` filters UpSet regions to the active
+// subset, so muting happens in display, not in the math.
+const { cohorts, intersections, visibleCohorts, toggleVisibility, isVisible } = useCohorts()
 
-// UpSetPlot wants {name, size, color}. visibleCohorts already carries those.
-const overlapCohorts = visibleCohorts
+// UpSetPlot shows every cohort row; hidden cohorts' rows and any intersection
+// touching them render as muted (grey). We pass the full cohort list and the
+// raw intersections (tagged with a `muted` flag when any set index points to
+// a hidden cohort), so rows and dot columns stay in place as the user toggles.
+const overlapCohorts = computed(() =>
+  cohorts.value.map(c => ({
+    name: c.name,
+    size: c.size,
+    color: c.color,
+    muted: c.visible === false,
+  }))
+)
 const overlapIntersections = computed(() =>
-  [...visibleIntersections.value].sort((a, b) => b.size - a.size)
+  [...intersections.value]
+    .map(row => ({
+      ...row,
+      muted: row.sets.some(i => cohorts.value[i]?.visible === false),
+    }))
+    // Active (non-muted) intersections first, each group sorted by size desc.
+    // Keeps reader focus on the live comparison while parked ones stay visible.
+    .sort((a, b) => (Number(a.muted) - Number(b.muted)) || (b.size - a.size))
 )
 
-// ── N-cohort layout tokens (driven by the VISIBLE subset) ──
-// Cohort cards use a 2-column grid when ≥2 cohorts are visible so 3 wrap
-// naturally into a 2-up top row + single card below. For 1 visible cohort
-// we fall back to 1fr so the single card takes full width.
+// ── N-cohort layout tokens (driven by ALL cohorts — muted ones still occupy
+// their grid cell so the comparison doesn't reflow on every toggle). ──
 const cohortGridStyle = computed(() => ({
   display: 'grid',
-  gridTemplateColumns: visibleCohorts.value.length <= 1 ? '1fr' : '1fr 1fr',
+  gridTemplateColumns: cohorts.value.length <= 1 ? '1fr' : '1fr 1fr',
   gap: '7px',
   paddingBottom: '10px',
 }))
 
-// cp-table sizing (right rail is 320px wide → ~296px inner width):
-//   N = 2: 80px label + 2·1fr values + 58px Δ summary  (fits panel naturally)
-//   N ≥ 3: 58px label + N·44px values + 86px Range summary (fixed widths)
-// Panels with N ≥ 4 overflow and gain a horizontal scrollbar automatically.
+// cp-table sizing — column count is driven by the FULL cohort list so hidden
+// cohorts remain as greyed-out columns the user can see and un-mute.
 const cpTableStyle = computed(() => {
-  const n = visibleCohorts.value.length
+  const n = cohorts.value.length
   const isRange = n >= 3
   return {
     display: 'grid',
@@ -47,6 +60,7 @@ const cpTableStyle = computed(() => {
 })
 
 // Header label for the summary column: "Δ" for pairwise, "Range" for ≥3.
+// Driven by VISIBLE count so the column re-labels sensibly as the user toggles.
 const summaryHeader = computed(() => visibleCohorts.value.length === 2 ? 'Δ' : 'Range')
 
 // Compute a range-strip descriptor for a numeric metric when N ≥ 3.
@@ -304,22 +318,24 @@ const metricEditorOpen = ref(false)
       </button>
       <div class="accordion-content">
         <div class="accordion-body">
-          <!-- Cohort summary cards — N-scalable via cohorts registry -->
+          <!-- Cohort summary cards — N-scalable via cohorts registry. Hidden
+               cohorts render in a muted greyscale state so the user can still
+               see what they've parked and click Compare to bring it back. -->
           <div class="cp-cohorts" :style="cohortGridStyle">
             <div
-              v-for="cohort in visibleCohorts"
+              v-for="cohort in cohorts"
               :key="cohort.letter"
               class="cp-cohort"
-              :style="{
-                background: `${cohort.color}0D`,
-                borderColor: `${cohort.color}80`,
-                boxShadow: `0 2px 5px ${cohort.color}1F`,
-              }"
+              :class="{ 'cp-cohort-muted': cohort.visible === false }"
+              :style="cohort.visible === false
+                ? { background: '#F8FAFC', borderColor: '#E2E8F0', boxShadow: 'none' }
+                : { background: `${cohort.color}0D`, borderColor: `${cohort.color}80`, boxShadow: `0 2px 5px ${cohort.color}1F` }"
             >
-              <div class="cp-cohort-tag" :style="{ color: cohort.color }">
+              <div class="cp-cohort-tag" :style="{ color: cohort.visible === false ? '#94A3B8' : cohort.color }">
                 {{ cohort.name }} · {{ cohort.tag }}
+                <span v-if="cohort.visible === false" class="cp-cohort-hidden-chip">hidden</span>
               </div>
-              <div class="cp-cohort-n" :style="{ color: cohort.color }">
+              <div class="cp-cohort-n" :style="{ color: cohort.visible === false ? '#94A3B8' : cohort.color }">
                 {{ cohort.size.toLocaleString() }}
               </div>
               <div class="cp-cohort-sub">{{ cohort.criteria.length }} criteria</div>
@@ -327,7 +343,7 @@ const metricEditorOpen = ref(false)
                 <li v-for="(crit, ci) in cohort.criteria" :key="ci">
                   <template v-if="crit.endsWith('[NEW]')">
                     {{ crit.replace(' [NEW]', '') }}
-                    <span :style="{ background: `${cohort.color}1F`, color: cohort.color, fontSize: '11px', fontWeight: 700, padding: '1px 4px', borderRadius: '3px' }">[NEW]</span>
+                    <span :style="{ background: cohort.visible === false ? '#F1F5F9' : `${cohort.color}1F`, color: cohort.visible === false ? '#94A3B8' : cohort.color, fontSize: '11px', fontWeight: 700, padding: '1px 4px', borderRadius: '3px' }">[NEW]</span>
                   </template>
                   <template v-else>{{ crit }}</template>
                 </li>
@@ -360,13 +376,15 @@ const metricEditorOpen = ref(false)
           <div class="cp-metrics-scroll">
             <div class="cp-metrics-inner">
 
-              <!-- Metrics table header (column labels) -->
+              <!-- Metrics table header (column labels). Hidden cohort letters
+                   render in muted grey so the column persists and reserves its
+                   slot — re-enabling via Compare pill fills it back in. -->
               <div :style="{ ...cpTableStyle, paddingBottom: '7px', borderBottom: '1px solid #F3F4F6', marginBottom: '8px' }">
                 <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
                 <span
-                  v-for="cohort in visibleCohorts"
+                  v-for="cohort in cohorts"
                   :key="`hd-${cohort.letter}`"
-                  :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
+                  :style="{ fontSize: '11px', fontWeight: 700, color: cohort.visible === false ? '#CBD5E1' : cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
                 >{{ cohort.letter }}</span>
                 <span style="font-size:11px;font-weight:600;color:#475569;text-align:right;letter-spacing:0.5px;text-transform:uppercase">{{ summaryHeader }}</span>
               </div>
@@ -376,30 +394,36 @@ const metricEditorOpen = ref(false)
                 <div class="cp-sec-lbl">{{ group.name }}</div>
                 <template v-for="m in group.metrics" :key="m.label">
 
-                  <!-- Boolean flag row — chips align under cohort header cells -->
+                  <!-- Boolean flag row — chips align under cohort header cells.
+                       Hidden cohort columns render as muted '—' so the row
+                       width stays stable when Compare pills toggle. -->
                   <div
                     v-if="m.kind === 'flag' || m.values?.[0] === 'incl' || m.values?.[0] === 'n/a'"
                     :style="{ ...cpTableStyle, marginBottom: '7px' }"
                   >
                     <span class="m">{{ m.label }}</span>
                     <span
-                      v-for="(v, vi) in m.values"
+                      v-for="(cohort, vi) in cohorts"
                       :key="`f-${vi}`"
-                      :class="['cp-flag', v === 'incl' ? 'cp-flag-on' : 'cp-flag-off']"
-                      :style="v === 'incl' ? { justifySelf: 'center', background: `${visibleCohorts[vi].color}1F`, color: visibleCohorts[vi].color } : { justifySelf: 'center' }"
-                    >{{ v === 'incl' ? '✓' : '—' }}</span>
+                      :class="['cp-flag', m.values[vi] === 'incl' ? 'cp-flag-on' : 'cp-flag-off']"
+                      :style="cohort.visible === false
+                        ? { justifySelf: 'center', background: '#F1F5F9', color: '#CBD5E1' }
+                        : (m.values[vi] === 'incl' ? { justifySelf: 'center', background: `${cohort.color}1F`, color: cohort.color } : { justifySelf: 'center' })"
+                    >{{ cohort.visible === false ? '·' : (m.values[vi] === 'incl' ? '✓' : '—') }}</span>
                     <span></span>
                   </div>
 
-                  <!-- Numeric row — per-cohort values in the color of each cohort -->
+                  <!-- Numeric row — per-cohort values in the color of each cohort.
+                       Hidden cohort values render muted-grey so the comparison
+                       math (Δ / Range) stays scoped to active cohorts below. -->
                   <template v-else>
                     <div :style="{ ...cpTableStyle, marginBottom: '3px', alignItems: 'start' }">
                       <span class="m" style="padding-top:1px">{{ m.label }}</span>
                       <span
-                        v-for="(v, vi) in m.values"
+                        v-for="(cohort, vi) in cohorts"
                         :key="`v-${vi}`"
-                        :style="{ fontSize: '12px', fontWeight: 700, color: visibleCohorts[vi].color, textAlign: 'center' }"
-                      >{{ v }}</span>
+                        :style="{ fontSize: '12px', fontWeight: 700, color: cohort.visible === false ? '#CBD5E1' : cohort.color, textAlign: 'center' }"
+                      >{{ m.values[vi] }}</span>
                       <div class="cp-delta-cell">
                         <!-- N=2: classic delta badge + magnitude bar -->
                         <template v-if="visibleCohorts.length === 2">

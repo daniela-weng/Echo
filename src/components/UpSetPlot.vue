@@ -34,6 +34,14 @@ const DOT_OFF_STROKE = '#CBD5E1'
 const CONNECT_STROKE = '#475569'
 const INTER_BAR_FILL = '#64748B'
 const BAR_TRACK_FILL = '#F1F5F9'
+// Muted palette for rows/columns whose cohort is hidden from the comparison.
+// Chosen ≥2:1 against the #F8FAFC panel so muted elements read as "parked"
+// but not invisible, matching the canvas dimming convention.
+const MUTED_ROW_FILL      = '#CBD5E1'
+const MUTED_BAR_TRACK     = '#F1F5F9'
+const MUTED_TEXT          = '#94A3B8'
+const MUTED_INTER_FILL    = '#CBD5E1'
+const MUTED_CONNECT_STROKE = '#CBD5E1'
 
 // Minimum horizontal distance between intersection-column centers. 28px gives
 // the widest 12px count label (≈24px for "1,850") a 4px breathing gap and
@@ -100,14 +108,14 @@ const fmt = n => n.toLocaleString()
         text-anchor="middle"
         font-size="12"
         font-weight="600"
-        fill="#334155"
+        :fill="col.muted ? MUTED_TEXT : '#334155'"
       >{{ fmt(col.size) }}</text>
       <rect
         :x="col.x - 5"
         :y="col.barY"
         width="10"
         :height="col.h"
-        :fill="INTER_BAR_FILL"
+        :fill="col.muted ? MUTED_INTER_FILL : INTER_BAR_FILL"
         rx="1.5"
       />
     </g>
@@ -130,7 +138,7 @@ const fmt = n => n.toLocaleString()
         :y="row.y + 4"
         font-size="11"
         font-weight="500"
-        fill="#1F2937"
+        :fill="row.muted ? MUTED_TEXT : '#1F2937'"
       >{{ row.name }}</text>
 
       <!-- Count: matches .cp-table .a/.b (12px, bold, cohort-colored) -->
@@ -140,7 +148,7 @@ const fmt = n => n.toLocaleString()
         text-anchor="end"
         font-size="12"
         font-weight="700"
-        :fill="row.color"
+        :fill="row.muted ? MUTED_TEXT : row.color"
       >{{ fmt(row.size) }}</text>
 
       <!-- Set-size bar track (subtle, shows scale context) -->
@@ -158,7 +166,7 @@ const fmt = n => n.toLocaleString()
         :y="row.y - 4"
         :width="row.barW"
         height="8"
-        :fill="row.color"
+        :fill="row.muted ? MUTED_ROW_FILL : row.color"
         fill-opacity="0.9"
         rx="1.5"
       />
@@ -172,7 +180,7 @@ const fmt = n => n.toLocaleString()
         :y1="layout.rows[Math.min(...col.sets)].y"
         :x2="col.x"
         :y2="layout.rows[Math.max(...col.sets)].y"
-        :stroke="CONNECT_STROKE"
+        :stroke="col.muted ? MUTED_CONNECT_STROKE : CONNECT_STROKE"
         stroke-width="1.6"
         stroke-linecap="round"
       />
@@ -182,8 +190,8 @@ const fmt = n => n.toLocaleString()
         :cx="col.x"
         :cy="row.y"
         :r="DOT_R"
-        :fill="col.sets.includes(row.idx) ? row.color : DOT_OFF_FILL"
-        :stroke="col.sets.includes(row.idx) ? row.color : DOT_OFF_STROKE"
+        :fill="col.sets.includes(row.idx) ? (col.muted || row.muted ? MUTED_ROW_FILL : row.color) : DOT_OFF_FILL"
+        :stroke="col.sets.includes(row.idx) ? (col.muted || row.muted ? MUTED_ROW_FILL : row.color) : DOT_OFF_STROKE"
         stroke-width="1"
       />
     </g>
