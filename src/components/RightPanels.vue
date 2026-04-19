@@ -5,21 +5,26 @@ import UpSetPlot from './UpSetPlot.vue'
 import { useCohorts } from '../composables/useCohorts.js'
 
 // ── Shared cohort registry (single source of truth for every panel below) ──
-const { cohorts, intersections } = useCohorts()
+// `cohorts` is the full registry (everything on the canvas); `visibleCohorts`
+// is the subset the user has toggled ON for comparison. Every panel below
+// consumes `visibleCohorts`/`visibleIntersections` so hiding a cohort from
+// its Target pill propagates instantly across Overlap, Profile, and Insights
+// without removing the cohort from the canvas.
+const { cohorts, visibleCohorts, visibleIntersections } = useCohorts()
 
-// UpSetPlot wants {name, size, color}. cohorts already carries name/size/color.
-const overlapCohorts = cohorts
+// UpSetPlot wants {name, size, color}. visibleCohorts already carries those.
+const overlapCohorts = visibleCohorts
 const overlapIntersections = computed(() =>
-  [...intersections.value].sort((a, b) => b.size - a.size)
+  [...visibleIntersections.value].sort((a, b) => b.size - a.size)
 )
 
-// ── N-cohort layout tokens ──
-// Cohort cards always use a 2-column grid so 3 cohorts wrap naturally into a
-// 2-up top row + single card below (instead of a tall 1×N column). For N = 1
+// ── N-cohort layout tokens (driven by the VISIBLE subset) ──
+// Cohort cards use a 2-column grid when ≥2 cohorts are visible so 3 wrap
+// naturally into a 2-up top row + single card below. For 1 visible cohort
 // we fall back to 1fr so the single card takes full width.
 const cohortGridStyle = computed(() => ({
   display: 'grid',
-  gridTemplateColumns: cohorts.value.length <= 1 ? '1fr' : '1fr 1fr',
+  gridTemplateColumns: visibleCohorts.value.length <= 1 ? '1fr' : '1fr 1fr',
   gap: '7px',
   paddingBottom: '10px',
 }))
@@ -27,24 +32,22 @@ const cohortGridStyle = computed(() => ({
 // cp-table sizing (right rail is 320px wide → ~296px inner width):
 //   N = 2: 80px label + 2·1fr values + 58px Δ summary  (fits panel naturally)
 //   N ≥ 3: 58px label + N·44px values + 86px Range summary (fixed widths)
-// At N = 3 the fixed layout sums to 58+132+86+24=300px, which matches the
-// 296px inner width after padding so the Range column is visible by default.
-// Panels with N ≥ 4 overflow and gain a horizontal scrollbar automatically
-// (same behavior as Cohort Overlap's UpSet plot).
+// Panels with N ≥ 4 overflow and gain a horizontal scrollbar automatically.
 const cpTableStyle = computed(() => {
-  const isRange = cohorts.value.length >= 3
+  const n = visibleCohorts.value.length
+  const isRange = n >= 3
   return {
     display: 'grid',
     gridTemplateColumns: isRange
-      ? `58px repeat(${cohorts.value.length}, 44px) 86px`
-      : `80px repeat(${cohorts.value.length}, 1fr) 58px`,
+      ? `58px repeat(${n}, 44px) 86px`
+      : `80px repeat(${n}, 1fr) 58px`,
     gap: '4px 6px',
     alignItems: 'center',
   }
 })
 
 // Header label for the summary column: "Δ" for pairwise, "Range" for ≥3.
-const summaryHeader = computed(() => cohorts.value.length === 2 ? 'Δ' : 'Range')
+const summaryHeader = computed(() => visibleCohorts.value.length === 2 ? 'Δ' : 'Range')
 
 // Compute a range-strip descriptor for a numeric metric when N ≥ 3.
 // Returns { min, max, label, frac } where frac maps the [min..max] window into
@@ -254,7 +257,7 @@ const metricEditorOpen = ref(false)
             :cohorts="overlapCohorts"
             :intersections="overlapIntersections"
             :width="244"
-            :height="cohorts.length >= 3 ? 176 : 134"
+            :height="visibleCohorts.length >= 3 ? 176 : 134"
           />
         </div>
       </div>
@@ -272,7 +275,7 @@ const metricEditorOpen = ref(false)
           <!-- Cohort summary cards — N-scalable via cohorts registry -->
           <div class="cp-cohorts" :style="cohortGridStyle">
             <div
-              v-for="cohort in cohorts"
+              v-for="cohort in visibleCohorts"
               :key="cohort.letter"
               class="cp-cohort"
               :style="{
@@ -329,7 +332,7 @@ const metricEditorOpen = ref(false)
               <div :style="{ ...cpTableStyle, paddingBottom: '7px', borderBottom: '1px solid #F3F4F6', marginBottom: '8px' }">
                 <span style="font-size:11px;font-weight:500;color:#9CA3AF;letter-spacing:0.6px;text-transform:uppercase">Metric</span>
                 <span
-                  v-for="cohort in cohorts"
+                  v-for="cohort in visibleCohorts"
                   :key="`hd-${cohort.letter}`"
                   :style="{ fontSize: '11px', fontWeight: 700, color: cohort.color, textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }"
                 >{{ cohort.letter }}</span>
@@ -351,7 +354,7 @@ const metricEditorOpen = ref(false)
                       v-for="(v, vi) in m.values"
                       :key="`f-${vi}`"
                       :class="['cp-flag', v === 'incl' ? 'cp-flag-on' : 'cp-flag-off']"
-                      :style="v === 'incl' ? { justifySelf: 'center', background: `${cohorts[vi].color}1F`, color: cohorts[vi].color } : { justifySelf: 'center' }"
+                      :style="v === 'incl' ? { justifySelf: 'center', background: `${visibleCohorts[vi].color}1F`, color: visibleCohorts[vi].color } : { justifySelf: 'center' }"
                     >{{ v === 'incl' ? '✓' : '—' }}</span>
                     <span></span>
                   </div>
@@ -363,11 +366,11 @@ const metricEditorOpen = ref(false)
                       <span
                         v-for="(v, vi) in m.values"
                         :key="`v-${vi}`"
-                        :style="{ fontSize: '12px', fontWeight: 700, color: cohorts[vi].color, textAlign: 'center' }"
+                        :style="{ fontSize: '12px', fontWeight: 700, color: visibleCohorts[vi].color, textAlign: 'center' }"
                       >{{ v }}</span>
                       <div class="cp-delta-cell">
                         <!-- N=2: classic delta badge + magnitude bar -->
-                        <template v-if="cohorts.length === 2">
+                        <template v-if="visibleCohorts.length === 2">
                           <span class="d" :class="m.dc">{{ m.delta }}</span>
                           <div v-if="m.deltaMag" class="cp-delta-mag" :class="m.dc" :style="{ width: m.deltaMag + '%' }"></div>
                         </template>

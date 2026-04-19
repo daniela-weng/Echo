@@ -11,7 +11,7 @@ import { useMetrics } from './composables/useMetrics.js'
 import { useCohorts } from './composables/useCohorts.js'
 import { executeGraph } from './api/index.js'
 
-const { nodes, edges, applyExecutionResults } = useGraph()
+const { nodes, edges, displayEdges, applyExecutionResults } = useGraph()
 const { messages, sendMessage, pipelineSteps, statusText, logLines } = useAgent(nodes)
 const { groups, addGroup, deleteGroup, addMetric, deleteMetric } = useMetrics()
 const { activeCount } = useCohorts()
@@ -22,6 +22,10 @@ async function onExecute() {
   const results = await executeGraph({ nodes: nodes.value, edges: edges.value })
   applyExecutionResults(results)
 }
+
+// Edges are presented through a dimming wrapper (displayEdges) but any
+// structural updates from the canvas still need to land on the source array.
+function onEdgesUpdate(next) { edges.value = next }
 </script>
 
 <template>
@@ -43,7 +47,8 @@ async function onExecute() {
     <div class="workspace">
       <CanvasArea
         v-model:nodes="nodes"
-        v-model:edges="edges"
+        :edges="displayEdges"
+        @update:edges="onEdgesUpdate"
         @execute="onExecute"
         @toggle-mobile-panels="mobilePanelsOpen = !mobilePanelsOpen"
       />

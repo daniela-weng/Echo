@@ -1,6 +1,8 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useCohorts } from './useCohorts.js'
 
 export function useGraph() {
+  const { isVisible } = useCohorts()
   const nodes = ref([
     { id: 'db',      type: 'database',  position: { x: 130, y: 10  }, data: { name: 'mimic_iv', count: '12,345' } },
 
@@ -33,33 +35,44 @@ export function useGraph() {
   const EDGE_B = { stroke: '#A78BFA', strokeWidth: 1.6, strokeDasharray: '5 4' }
   const EDGE_C = { stroke: '#F59E0B', strokeWidth: 1.6, strokeDasharray: '5 4' }
 
+  // Tag each edge with its cohort letter so we can dim edges whose cohort is
+  // hidden from comparison panels (parallel to how nodes dim themselves).
   const edges = ref([
     // Cohort A
-    { id: 'e-db-age50',   source: 'db',      target: 'age50',   sourceHandle: 'src-a', type: 'smoothstep', style: EDGE_A },
-    { id: 'e-db-htnA',    source: 'db',      target: 'htnA',    sourceHandle: 'src-a', type: 'smoothstep', style: EDGE_A },
-    { id: 'e-age50-andA', source: 'age50',   target: 'andA',    type: 'smoothstep', style: EDGE_A },
-    { id: 'e-htnA-andA',  source: 'htnA',    target: 'andA',    type: 'smoothstep', style: EDGE_A },
-    { id: 'e-andA-excl',  source: 'andA',    target: 'exclIcu', type: 'smoothstep', style: EDGE_A },
-    { id: 'e-excl-cohA',  source: 'exclIcu', target: 'cohortA', type: 'smoothstep', style: EDGE_A },
+    { id: 'e-db-age50',   source: 'db',      target: 'age50',   sourceHandle: 'src-a', type: 'smoothstep', style: EDGE_A, data: { cohort: 'a' } },
+    { id: 'e-db-htnA',    source: 'db',      target: 'htnA',    sourceHandle: 'src-a', type: 'smoothstep', style: EDGE_A, data: { cohort: 'a' } },
+    { id: 'e-age50-andA', source: 'age50',   target: 'andA',    type: 'smoothstep', style: EDGE_A, data: { cohort: 'a' } },
+    { id: 'e-htnA-andA',  source: 'htnA',    target: 'andA',    type: 'smoothstep', style: EDGE_A, data: { cohort: 'a' } },
+    { id: 'e-andA-excl',  source: 'andA',    target: 'exclIcu', type: 'smoothstep', style: EDGE_A, data: { cohort: 'a' } },
+    { id: 'e-excl-cohA',  source: 'exclIcu', target: 'cohortA', type: 'smoothstep', style: EDGE_A, data: { cohort: 'a' } },
     // Cohort B
-    { id: 'e-db-age45',   source: 'db',      target: 'age45',   sourceHandle: 'src-b', type: 'bezier',     style: { ...EDGE_B, strokeDasharray: '8 4' } },
-    { id: 'e-age45-htnB', source: 'age45',   target: 'htnB',    type: 'smoothstep', style: EDGE_B },
-    { id: 'e-age45-sbp',  source: 'age45',   target: 'sbp140',  type: 'smoothstep', style: EDGE_B },
-    { id: 'e-htnB-andB',  source: 'htnB',    target: 'andB',    type: 'smoothstep', style: EDGE_B },
-    { id: 'e-sbp-andB',   source: 'sbp140',  target: 'andB',    type: 'smoothstep', style: EDGE_B },
-    { id: 'e-andB-exclB', source: 'andB',    target: 'exclB',   type: 'smoothstep', style: EDGE_B },
-    { id: 'e-exclB-cohB', source: 'exclB',   target: 'cohortB', type: 'smoothstep', style: { ...EDGE_B, stroke: '#C4B5FD', strokeDasharray: '4 4' } },
+    { id: 'e-db-age45',   source: 'db',      target: 'age45',   sourceHandle: 'src-b', type: 'bezier',     style: { ...EDGE_B, strokeDasharray: '8 4' }, data: { cohort: 'b' } },
+    { id: 'e-age45-htnB', source: 'age45',   target: 'htnB',    type: 'smoothstep', style: EDGE_B, data: { cohort: 'b' } },
+    { id: 'e-age45-sbp',  source: 'age45',   target: 'sbp140',  type: 'smoothstep', style: EDGE_B, data: { cohort: 'b' } },
+    { id: 'e-htnB-andB',  source: 'htnB',    target: 'andB',    type: 'smoothstep', style: EDGE_B, data: { cohort: 'b' } },
+    { id: 'e-sbp-andB',   source: 'sbp140',  target: 'andB',    type: 'smoothstep', style: EDGE_B, data: { cohort: 'b' } },
+    { id: 'e-andB-exclB', source: 'andB',    target: 'exclB',   type: 'smoothstep', style: EDGE_B, data: { cohort: 'b' } },
+    { id: 'e-exclB-cohB', source: 'exclB',   target: 'cohortB', type: 'smoothstep', style: { ...EDGE_B, stroke: '#C4B5FD', strokeDasharray: '4 4' }, data: { cohort: 'b' } },
     // Cohort C — reuses Age ≥ 50 (from A side) and SBP > 140 (from B side), plus new T2D exclusion.
     // Lineage hint: age50 and sbp140 feed both their parent cohorts and Cohort C's AND gate.
-    { id: 'e-db-age50C',  source: 'db',      target: 'age50C',  sourceHandle: 'src-c', type: 'bezier',     style: EDGE_C },
-    { id: 'e-db-htnC',    source: 'db',      target: 'htnC',    sourceHandle: 'src-c', type: 'smoothstep', style: EDGE_C },
-    { id: 'e-age50C-andC', source: 'age50C', target: 'andC',    type: 'smoothstep', style: EDGE_C },
-    { id: 'e-htnC-andC',  source: 'htnC',    target: 'andC',    type: 'smoothstep', style: EDGE_C },
-    { id: 'e-sbpC-andC',  source: 'sbpC',    target: 'andC',    type: 'smoothstep', style: EDGE_C },
-    { id: 'e-db-sbpC',    source: 'db',      target: 'sbpC',    sourceHandle: 'src-c', type: 'smoothstep', style: EDGE_C },
-    { id: 'e-andC-exclT2D', source: 'andC',  target: 'exclT2D', type: 'smoothstep', style: EDGE_C },
-    { id: 'e-exclT2D-cohC', source: 'exclT2D', target: 'cohortC', type: 'smoothstep', style: EDGE_C },
+    { id: 'e-db-age50C',  source: 'db',      target: 'age50C',  sourceHandle: 'src-c', type: 'bezier',     style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-db-htnC',    source: 'db',      target: 'htnC',    sourceHandle: 'src-c', type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-age50C-andC', source: 'age50C', target: 'andC',    type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-htnC-andC',  source: 'htnC',    target: 'andC',    type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-sbpC-andC',  source: 'sbpC',    target: 'andC',    type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-db-sbpC',    source: 'db',      target: 'sbpC',    sourceHandle: 'src-c', type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-andC-exclT2D', source: 'andC',  target: 'exclT2D', type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
+    { id: 'e-exclT2D-cohC', source: 'exclT2D', target: 'cohortC', type: 'smoothstep', style: EDGE_C, data: { cohort: 'c' } },
   ])
+
+  // Edges as rendered — hidden cohorts' edges dim so the parked subgraph reads
+  // as a coherent, deemphasized unit alongside its dimmed nodes.
+  const displayEdges = computed(() =>
+    edges.value.map(e => {
+      const visible = isVisible(e.data?.cohort)
+      return visible ? e : { ...e, style: { ...e.style, opacity: 0.35 } }
+    })
+  )
 
   /**
    * Update patient counts after backend execution response.
@@ -72,5 +85,5 @@ export function useGraph() {
     })
   }
 
-  return { nodes, edges, applyExecutionResults }
+  return { nodes, edges, displayEdges, applyExecutionResults }
 }

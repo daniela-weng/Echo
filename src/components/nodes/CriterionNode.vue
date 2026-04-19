@@ -1,18 +1,26 @@
 <script setup>
 import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
+import { useCohorts } from '../../composables/useCohorts.js'
 
 const props = defineProps({ data: Object })
+const { isVisible } = useCohorts()
 
 // Per-cohort accent tokens — keep in sync with useCohorts.js COLOR_SLOTS.
 const BORDER = { a: '#2563EB', b: '#8E7BE8', c: '#D97706', d: '#0E7490', e: '#BE185D' }
 const SHADOW = { a: 'rgba(37,99,235,0.08)', b: 'rgba(109,40,217,0.08)', c: 'rgba(217,119,6,0.10)', d: 'rgba(14,116,144,0.10)', e: 'rgba(190,24,93,0.10)' }
 const borderColor = computed(() => BORDER[props.data.cohort] || BORDER.a)
 const shadowColor = computed(() => SHADOW[props.data.cohort] || SHADOW.a)
+
+// Dim the entire node when this cohort is hidden from comparison panels, so
+// the canvas still shows the cohort but signals it is parked.
+const cohortVisible = computed(() => isVisible(props.data.cohort))
+const rootOpacity   = computed(() => (cohortVisible.value ? 1   : 0.45))
+const rootFilter    = computed(() => (cohortVisible.value ? 'none' : 'saturate(0.4)'))
 </script>
 
 <template>
-  <div style="position:relative">
+  <div :style="`position:relative;opacity:${rootOpacity};filter:${rootFilter};transition:opacity 150ms ease,filter 150ms ease`">
     <!-- Inclusion / Exclusion badge -->
     <div v-if="data.type === 'inclusion'" style="position:absolute;top:-11px;left:0;background:#DCFCE7;border:1.05px solid #AFE7C3;border-radius:10px;padding:2px 6px;display:flex;gap:4px;align-items:center;white-space:nowrap;z-index:2;pointer-events:none">
       <svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#15803D"/></svg>
