@@ -10,7 +10,7 @@ import { useCohorts } from '../composables/useCohorts.js'
 // consumes `visibleCohorts`/`visibleIntersections` so hiding a cohort from
 // its Target pill propagates instantly across Overlap, Profile, and Insights
 // without removing the cohort from the canvas.
-const { cohorts, visibleCohorts, visibleIntersections } = useCohorts()
+const { cohorts, visibleCohorts, visibleIntersections, toggleVisibility } = useCohorts()
 
 // UpSetPlot wants {name, size, color}. visibleCohorts already carries those.
 const overlapCohorts = visibleCohorts
@@ -147,6 +147,38 @@ const metricEditorOpen = ref(false)
 
     <!-- Scrollable accordion stack -->
     <div class="right-panels-scroll">
+
+    <!-- Compare selector — pick which cohorts participate in the comparison
+         views (Overlap, Profile, Insights). Each pill is a checkbox chip:
+         click to include/exclude. At least one cohort must remain selected. -->
+    <div class="compare-selector">
+      <span class="compare-selector-label">Compare</span>
+      <div class="compare-selector-pills">
+        <button
+          v-for="cohort in cohorts"
+          :key="cohort.letter"
+          type="button"
+          class="compare-pill"
+          :class="{ active: cohort.visible !== false }"
+          :style="cohort.visible !== false
+            ? { background: `${cohort.color}14`, borderColor: cohort.color, color: cohort.color }
+            : { background: '#FFFFFF', borderColor: '#E2E8F0', color: '#94A3B8' }"
+          :disabled="cohort.visible !== false && visibleCohorts.length === 1"
+          :title="cohort.visible !== false && visibleCohorts.length === 1
+            ? 'At least one cohort must stay in the comparison'
+            : `Toggle ${cohort.name} in the comparison views`"
+          @click="toggleVisibility(cohort.letter)"
+        >
+          <span class="compare-pill-check" :style="cohort.visible !== false ? { borderColor: cohort.color, background: cohort.color } : {}">
+            <svg v-if="cohort.visible !== false" width="8" height="8" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M2 5l2 2 4-4" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="compare-pill-label">{{ cohort.name }}</span>
+        </button>
+      </div>
+      <span class="compare-selector-hint">{{ visibleCohorts.length }} of {{ cohorts.length }}</span>
+    </div>
 
     <!-- Section 0: Console (Cohort Definition + SQL) -->
     <div class="accordion-item" :class="{ open: open.console }">
