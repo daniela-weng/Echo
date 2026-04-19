@@ -46,13 +46,16 @@ const cohortGridStyle = computed(() => ({
 
 // cp-table sizing — column count is driven by the FULL cohort list so hidden
 // cohorts remain as greyed-out columns the user can see and un-mute.
+// Fractional cohort columns (1fr each) let values sit under their letter
+// header with even horizontal spacing, so the Δ / Range column stays tight
+// against the rightmost cohort instead of floating to the edge.
 const cpTableStyle = computed(() => {
   const n = cohorts.value.length
   const isRange = n >= 3
   return {
     display: 'grid',
     gridTemplateColumns: isRange
-      ? `58px repeat(${n}, 44px) 86px`
+      ? `56px repeat(${n}, minmax(34px, 1fr)) 64px`
       : `80px repeat(${n}, 1fr) 58px`,
     gap: '4px 6px',
     alignItems: 'center',

@@ -330,10 +330,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cp-delta-mag.d-pos{background:#16A34A}
 
 /* Metrics-table horizontal scroll. The outer container owns overflow; the
-   inner container is sized to max-content so fixed-px grid rows stay at
-   their natural width when the panel is narrower (N ≥ 3 case). */
+   inner container stretches to fill the panel so fractional (1fr) cohort
+   columns can expand evenly across the available width and the Range
+   column sits tight under the cohort headers (matches boolean-flag row
+   spacing above). */
 .cp-metrics-scroll{overflow-x:auto;overflow-y:hidden;margin:0 -14px;padding:0 14px}
-.cp-metrics-inner{min-width:max-content}
+.cp-metrics-inner{min-width:100%}
 
 /* Dumbbell chart — no extra CSS needed, drawn inline via SVG */
 
