@@ -77,9 +77,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ── ACCORDION ── */
 .accordion-item{border-bottom:1px solid #E2E8F0;background:#fff}
-.accordion-header{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;cursor:pointer;font-weight:600;font-size:12px;color:#1E293B;user-select:none;border:none;width:100%;background:transparent;text-align:left}
+.accordion-header{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;cursor:pointer;font-weight:600;font-size:12px;color:#1E293B;user-select:none;border:none;width:100%;background:#fff;text-align:left;position:sticky;top:0;z-index:10}
 .accordion-header:hover{background:#F1F5F9}
-.accordion-item.open>.accordion-header{background:#F8FAFC}
+.accordion-item.open>.accordion-header{background:#F8FAFC;box-shadow:0 1px 0 #E2E8F0,0 2px 4px -2px rgba(15,23,42,0.04)}
 .accordion-chevron{margin-left:auto;font-size:16px;color:#94A3B8;transition:transform 200ms ease,color 150ms ease;flex-shrink:0}
 .accordion-item.open>.accordion-header .accordion-chevron{transform:rotate(90deg)}
 .accordion-header .acc-icon{color:#94A3B8;transition:color 150ms ease;font-size:14px;flex-shrink:0}
